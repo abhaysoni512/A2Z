@@ -1,0 +1,7 @@
+{
+    "code-runner.executorMap": {
+        "cpp": "/Users/abhaysoni512/Desktop/A2Z/run_and_push.sh $fullFileName"
+    },
+    "code-runner.runInTerminal": true,
+    "code-runner.saveFileBeforeRun": true
+}
