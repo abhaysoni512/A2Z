@@ -22,11 +22,18 @@ if [ $? -eq 0 ]; then
     # Navigate to git root
     cd "/Users/abhaysoni512/Desktop/A2Z"
     
-    # Check if there are any changes to the file
-    git diff --quiet "$FILE_PATH"
+    # Check if the file is new (untracked) or has changes
+    if git ls-files --error-unmatch "$FILE_PATH" &>/dev/null; then
+        # File is tracked, check for changes
+        git diff --quiet "$FILE_PATH"
+        HAS_CHANGES=$?
+    else
+        # File is untracked (new file)
+        HAS_CHANGES=1
+    fi
     
-    if [ $? -eq 1 ]; then
-        # File has changes, proceed with commit and push
+    if [ $HAS_CHANGES -eq 1 ]; then
+        # File has changes or is new, proceed with commit and push
         echo "\nChanges detected in $FILE_NAME"
         
         # Add the file to git
