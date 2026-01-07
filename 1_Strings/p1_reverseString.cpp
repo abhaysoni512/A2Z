@@ -28,6 +28,7 @@ int main(){
     char c[100];
     cin.getline(c,100);
     reverseString(c);
+    cout<<c;
 
     return 0;
 }
