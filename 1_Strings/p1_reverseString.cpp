@@ -24,11 +24,23 @@ int len(char c[]){
     }
     return count;
 }
+
+void my_strcpy(char dest[], const char source[]){
+    int i;
+    for(i=0;source[i]!='\0';i++){
+        dest[i] = source[i];
+    }
+    dest[i] = '\0';
+}
 int main(){
-    char c[100];
-    cin.getline(c,100);
-    reverseString(c);
-    cout<<c;
+    // char c[100];
+    // cin.getline(c,100);
+    //reverseString(c);
+
+    char c1[10] = "Hello";
+    char c2[5] = "Ravi";
+    my_strcpy(c1,c2);
+    cout<<c1<<endl;
 
     return 0;
 }
