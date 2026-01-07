@@ -11,6 +11,8 @@ void reverseString(char c[])
     while (s<l)
     {
         swap(c[s],c[l]);
+        s++;
+        l--;
     }
     
 }
@@ -25,8 +27,7 @@ int len(char c[]){
 int main(){
     char c[100];
     cin.getline(c,100);
-
-    cout<<strlen(c);
+    reverseString(c);
 
     return 0;
 }
