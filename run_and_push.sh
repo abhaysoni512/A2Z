@@ -12,7 +12,12 @@ cd "$FILE_DIR"
 # Compile and run the C++ program
 echo "Compiling and running $FILE_NAME"
 echo "-------------------------------------------------------------------------------"
-g++ -std=c++20 "$FILE_NAME" -o "$FILE_BASE" && ./"$FILE_BASE" && rm -f "$FILE_BASE"
+# take input from input.txt if it exists and output to output.txt
+if [ -f "../input.txt" ]; then
+    g++ -std=c++20 "$FILE_NAME" -o "$FILE_BASE" && ./"$FILE_BASE" < ../input.txt > ../output.txt && rm -f "$FILE_BASE"
+else
+    g++ -std=c++20 "$FILE_NAME" -o "$FILE_BASE" && ./"$FILE_BASE" && rm -f "$FILE_BASE"
+fi
 echo "-------------------------------------------------------------------------------"
 
 # Check if compilation and execution were successful
