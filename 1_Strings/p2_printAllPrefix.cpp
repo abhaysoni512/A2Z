@@ -5,7 +5,7 @@ void prefixPrint(char c[]){
     size_t i = 0;
     for(int i = 0; i<l; i++){
         for(int j = 0; j<=i;j++){
-            cout<<c[i];
+            cout<<c[j];
         }
         cout<<endl;
     }
