@@ -16,7 +16,7 @@ int main(){
     cout<<s2<<endl;
 
     string s3 = "pqrabcabc";
-    cout<<s3.find("zy")<<endl;
+    cout<<s3.find("abc")<<endl;
 
     return 0;
 }
