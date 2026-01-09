@@ -14,5 +14,9 @@ int main(){
     string s2;
     getline(cin, s2); //
     cout<<s2<<endl;
+
+    string s3 = "pqrabcabc";
+    cout<<s3.find("zy")<<endl;
+
     return 0;
 }
