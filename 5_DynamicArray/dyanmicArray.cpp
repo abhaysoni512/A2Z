@@ -13,6 +13,9 @@ public:
     DynamicArray(int s): size(s){
         data = new int[size];
     }
+    ~DynamicArray(){
+        delete []data;
+    }
 
     void addElement(int v) {
         if (nextIndex == size) {
@@ -20,7 +23,7 @@ public:
             for(size_t i =0; i<size; i++){
                 temp[i] = data[i];
             }
-            delete data;
+            delete []data;
             
             nextIndex = size;
             size *= 2;
