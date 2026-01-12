@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 # Get the file path passed as argument
 FILE_PATH="$1"
@@ -25,7 +25,8 @@ if [ $? -eq 0 ]; then
     echo "\n✓ Program executed successfully"
     
     # Navigate to git root
-    cd "/Users/abhaysoni512/Desktop/A2Z"
+    cd "/root/Abhay/A2Z"
+    #cd "/Users/abhaysoni512/Desktop/A2Z"
     
     # Check if the file is new (untracked) or has changes
     if git ls-files --error-unmatch "$FILE_PATH" &>/dev/null; then
@@ -47,7 +48,57 @@ if [ $? -eq 0 ]; then
         # Commit with a timestamp message
         COMMIT_MSG="Update $(basename "$FILE_PATH") - $(date '+%Y-%m-%d %H:%M:%S')"
         git commit -m "$COMMIT_MSG"
-        
+        # Detect OS and ensure we're in the correct repo root
+        OS_NAME="$(uname -s)"
+        if [ "$OS_NAME" = "Linux" ]; then
+            GIT_ROOT="/root/Abhay/A2Z"
+        elif [ "$OS_NAME" = "Darwin" ]; then
+            GIT_ROOT="/Users/abhaysoni512/Desktop/A2Z"
+        else
+            echo "Unsupported OS: $OS_NAME"
+            exit 1
+        fi
+
+        cd "$GIT_ROOT" || { echo "Failed to cd to repo root: $GIT_ROOT"; exit 1; }
+
+        # Pull latest from cloud while preserving local-only paths
+        PRESERVE_PATHS=(".vscode" "input.txt" "output.txt")
+        TMP_PRESERVE_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t a2z_preserve)"
+
+        for p in "${PRESERVE_PATHS[@]}"; do
+            if [ -e "$p" ]; then
+            mkdir -p "$TMP_PRESERVE_DIR/$(dirname "$p")"
+            cp -a "$p" "$TMP_PRESERVE_DIR/$p" 2>/dev/null || true
+            fi
+        done
+
+        echo "Syncing with remote (preserving .vscode, input.txt, output.txt)..."
+        git fetch origin main && git pull --rebase origin main
+        PULL_STATUS=$?
+
+        # Restore preserved paths (keep local versions)
+        for p in "${PRESERVE_PATHS[@]}"; do
+            if [ -e "$TMP_PRESERVE_DIR/$p" ]; then
+            rm -rf "$p"
+            mkdir -p "$(dirname "$p")"
+            cp -a "$TMP_PRESERVE_DIR/$p" "$p" 2>/dev/null || true
+            fi
+        done
+        rm -rf "$TMP_PRESERVE_DIR"
+
+        if [ $PULL_STATUS -ne 0 ]; then
+            echo "✗ git pull failed. Resolve conflicts and try again."
+            exit 1
+        fi
+
+        # If this is an existing (tracked) file, confirm before pushing
+        if git ls-files --error-unmatch "$FILE_PATH" &>/dev/null; then
+            read -r -p "This modifies an existing file. Push to GitHub? [y/N] " CONFIRM_PUSH
+            case "$CONFIRM_PUSH" in
+            y|Y|yes|YES) ;;
+            *) echo "→ Skipping push."; exit 0 ;;
+            esac
+        fi
         # Push to GitHub
         echo "Pushing to GitHub..."
         git push origin main
