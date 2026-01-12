@@ -11,5 +11,8 @@ int main() {
     cout<<v->at(1)<<endl;
     cout<<v->at(2)<<endl;
 
+    (*v)[4] = 40;
+    cout<<(*v)[4]<<endl;
+
     return 0;
 }
