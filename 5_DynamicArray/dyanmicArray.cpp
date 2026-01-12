@@ -24,8 +24,6 @@ public:
                 temp[i] = data[i];
             }
             delete []data;
-            
-            nextIndex = size;
             size *= 2;
             data = temp;    
         }
