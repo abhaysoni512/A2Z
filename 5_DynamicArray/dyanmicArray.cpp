@@ -43,5 +43,7 @@ int main() {
         d.addElement(i);
     }
     d.Display();
+    d.addElement(6);
+    d.Display();
     return 0;
 }
