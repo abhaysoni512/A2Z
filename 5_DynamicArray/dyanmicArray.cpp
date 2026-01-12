@@ -4,8 +4,8 @@ using namespace std;
 class DynamicArray{
 private:
     int *data{nullptr};
-    int nextIndex{};
-    int size{};
+    int nextIndex{}; // number of elements added
+    int size{}; // capacity of the array
 public:
     DynamicArray(){
         data = new int[5];
@@ -37,6 +37,14 @@ public:
         }
         cout<<endl;
     }
+
+    int getData(int i){
+        if(i>=0 && i<nextIndex){
+            return data[i];
+        }else{
+            return -1;
+        }
+    }
 };
 int main() {
     DynamicArray d;
@@ -46,5 +54,7 @@ int main() {
     d.Display();
     d.addElement(6);
     d.Display();
+
+    cout<<d.getData(2)<<endl;
     return 0;
 }
