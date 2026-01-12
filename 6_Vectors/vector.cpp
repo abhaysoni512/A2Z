@@ -14,5 +14,7 @@ int main() {
     (*v)[4] = 40;
     cout<<(*v)[4]<<endl;
 
+    cout<<"size = "<<v->size()<<endl;
+
     return 0;
 }
