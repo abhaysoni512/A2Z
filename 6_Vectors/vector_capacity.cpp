@@ -7,8 +7,9 @@ int main()
 
     for (int i=0; i<10; i++){
         cout<<"capacity before pushback: "<<v.capacity()<<endl;
+        cout << " Size  after pushback : " << v.size() << endl;
         v.push_back(i+1);
-        cout<<" Size  after pushback : "<<v.size()<<endl;
+        
     }
 
 
