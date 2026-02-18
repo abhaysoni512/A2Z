@@ -464,6 +464,298 @@ add.cpp:
 
 # Chapter 12 : Compound Types : References and pointers:
     
-* Lvalue and rvalue expressions :-
+## Lvalue and rvalue expressions :- An lvalue is an expression that refers to a memory location and allows us to take the address of that location using the address-of operator (&). An rvalue is an expression that does not refer to a memory location and cannot have its address taken.Commonly seen rvalues include literals (except C-style string literals, which are lvalues) and the return value of functions and operators that return by value. Rvalues aren’t identifiable (meaning they have to be used immediately), and only exist within the scope of the expression in which they are used.
 
-    
+ex: 
+```cpp
+int return5()
+{
+    return 5;
+}
+
+int main()
+{
+    int x{ 5 }; // 5 is an rvalue expression
+    const double d{ 1.2 }; // 1.2 is an rvalue expression
+
+    int y { x }; // x is a modifiable lvalue expression
+    const double e { d }; // d is a non-modifiable lvalue expression
+    int z { return5() }; // return5() is an rvalue expression (since the result is returned by value)
+
+    int w { x + 1 }; // x + 1 is an rvalue expression
+    int q { static_cast<int>(d) }; // the result of static casting d to an int is an rvalue expression
+
+    return 0;
+}
+````
+
+### Lvalue references : An lvalue reference is a reference that can only bind to lvalues. It is declared using the & symbol. For example:
+```cpp
+int x { 5 }; // x is an lvalue
+int& ref { x }; // ref is an lvalue reference to x
+```
+Note : Any change made to ref will also change x, since ref is just another name for x.
+
+Note : Once initialized, a reference in C++ cannot be reseated, meaning it cannot be changed to reference another object. If we try to assign a new value to a reference, we are actually assigning a new value to the object that the reference is bound to, not changing the reference itself.
+
+ex:
+```cpp
+int x { 5 };
+int& ref { x }; // ref is an lvalue reference to x
+ref = 10; // this changes the value of x to 10, but ref still references x
+cout << x << '\n'; // outputs 10
+```
+
+Note: references aren't objects themselves, but rather aliases for other objects. They don't have their own memory address, and they can't be null. This is why references must be initialized when they are declared, and why they can't be reseated to refer to a different object later on.
+
+##  Lvalue references to const:
+
+```cpp
+const int x { 5 }; // x is a non-modifiable (const) lvalue
+int& ref { x }; // error: ref can not bind to non-modifiable lvalue
+// This is not allowed because ref is a modifiable lvalue reference, and it cannot bind to a non-modifiable (const) lvalue like x. To fix this, we can declare ref as a reference to const:
+const int& ref { x }; // ref is a reference to const, and can bind to x
+```
+
+Also,
+
+```cpp
+int x { 5 }; // x is a modifiable lvalue
+const int& ref { x }; // ref is a reference to const, and can bind to
+
+// This is allowed because ref is a reference to const, which can bind to a modifiable lvalue like x. However, since ref is a reference to const, we cannot use it to modify the value of x through ref. Any attempt to do so will result in a compile error.
+ ```
+
+Note: Unlike a reference to non-const (which can only bind to modifiable lvalues), a reference to const can bind to modifiable lvalues, non-modifiable lvalues, and rvalues. Therefore, if we make a reference parameter const, then it will be able to bind to any type of argument passed to the function, which can be useful for writing more flexible and reusable code.
+
+
+## Pointers
+
+A pointer is an object that holds a memory address (typically of another variable) as its value. This allows us to store the address of some other object to use later.
+
+Note : The address-of operator returns a pointer
+
+```cpp
+#include <iostream>
+#include <typeinfo>
+
+int main()
+{
+	int x{ 4 };
+	std::cout << typeid(x).name() << '\n';  // print the type of x
+	std::cout << typeid(&x).name() << '\n'; // print the type of &x
+
+	return 0;
+}
+```
+
+output:
+```
+int
+int *
+```
+
+### Dangling pointers
+
+a dangling pointer is a pointer that is holding the address of an object that is no longer valid (e.g. because it has been destroyed).
+
+### Pointers and const
+
+```cpp
+int main()
+{
+    const int x { 5 }; // x is now const
+    int* ptr { &x };   // compile error: cannot convert from const int* to int* or error: cannot initialize a variable of type 'int *' with an rvalue of type 'const int *'
+
+
+    return 0;
+}
+
+* Pointer to const : A pointer to const is a pointer that points to a const object. This means that we cannot use the pointer to modify the value of the object it points to, but we can change the pointer itself to point to a different object.
+
+```cpp
+int main()
+{
+    const int x { 5 }; // x is a const int
+    const int* ptr { &x }; // ptr is a pointer to const int, and can point to x
+    *ptr = 10; // compile error: cannot modify the value of x through ptr
+    return 0;
+}
+```
+
+Note: ptr points to a const int. Because the data type being pointed to is const, the value being pointed to can’t be changed. However, because a pointer to const is not const itself (it just points to a const value), we can change what the pointer is pointing at by assigning the pointer a new address:
+
+```cpp
+int main()
+{
+    const int x{ 5 };
+    const int* ptr { &x }; // ptr points to const int x
+
+    const int y{ 6 };
+    ptr = &y; // okay: ptr now points at const int y
+
+    return 0;
+}
+
+Note: Just like with references, we can also have pointers to const that point to modifiable objects. This is allowed because the pointer itself is not const, but rather it points to a const value. However, since the pointer points to a const value, we cannot use it to modify the value of the object through the pointer.
+
+```cpp
+int main()
+{
+    int x{ 5 }; // x is a modifiable int
+    const int* ptr { &x }; // ptr is a pointer to const int, and can point to x
+    *ptr = 10; // compile error: cannot modify the value of x through ptr  
+    return 0;
+}
+```
+
+* Const pointer :  A const pointer is a pointer that is itself const, meaning that we cannot change the pointer to point to a different object after it has been initialized. However, we can still modify the value of the object that the const pointer points to (unless the object itself is also const).
+
+```cpp
+int main()
+{
+    int x{ 5 }; // x is a modifiable int
+    int* const ptr { &x }; // ptr is a const pointer to int, and can point to x
+    *ptr = 10; // okay: we can modify the value of x through ptr
+    int y{ 6 };
+    ptr = &y; // compile error: cannot change where ptr points (ptr is const)
+
+    return 0;
+}
+```
+
+## Pass by address
+
+Why we required pass by address? : Pass by value and pass by reference are the two most common ways to pass arguments to functions in C++. However, there are some cases where neither of these methods is suitable. For example, if we want to pass a large object to a function, passing by value can be inefficient because it involves making a copy of the object. On the other hand, if we want to allow the function to modify the argument, passing by reference may not be appropriate because it can lead to unintended side effects. In such cases, pass by address can be a useful alternative.
+
+c++ provides a way to pass values to functions by address using pointers. With pass by address, instead of providing an object as an argument, the caller provides an object’s address (via a pointer). 
+
+```cpp
+void printByValue(std::string val) // The function parameter is a copy of str
+{
+    std::cout << val << '\n'; // print the value via the copy
+}
+
+void printByReference(const std::string& ref) // The function parameter is a reference that binds to str
+{
+    std::cout << ref << '\n'; // print the value via the reference
+}
+
+void printByAddress(const std::string* ptr) // The function parameter is a pointer that holds the address of str
+{
+    std::cout << *ptr << '\n'; // print the value via the dereferenced pointer
+}
+
+int main()
+{
+    std::string str { "Hello, world!" };
+
+    printByValue(str); // pass by value
+    printByReference(str); // pass by reference
+    printByAddress(&str); // pass by address (pass the address of str)
+
+    return 0;
+}
+```
+
+* Pass by address… by reference?
+
+we can also pass pointers by reference, which allows us to modify the pointer itself (i.e., change where it points) within the function. This can be useful when we want to allow a function to modify the pointer argument to point to a different object.
+
+```cpp
+void modifyPointer(int*& ptr) // ptr is a reference to a pointer to int
+{
+    static int y { 10 }; // create a static int to point to (static so that it remains valid after the function returns)
+    ptr = &y; // modify the pointer to point to y
+}
+
+int main()
+{
+    int x { 5 };
+    int* ptr { &x }; // ptr initially points to x
+
+    modifyPointer(ptr); // pass the pointer by reference to the function
+    std::cout << *ptr << '\n'; // outputs 10, since ptr now points to y
+}
+```
+
+## Return by reference and return by address
+
+* Return by reference : A function can return a reference to an object, which allows the caller to access and modify the object directly through the reference. This can be useful for returning large objects without incurring the overhead of copying, or for allowing the caller to modify an object that is owned by the function.
+
+```cpp
+#include <iostream>
+#include <string>
+
+const std::string& getProgramName() // returns a const reference
+{
+    static const std::string s_programName { "Calculator" }; // has static duration, destroyed at end of program
+
+    return s_programName;
+}
+
+int main()
+{
+    std::cout << "This program is named " << getProgramName();
+
+    return 0;
+}
+```
+
+Note: The object being returned by reference must exist after the function returns, otherwise we would be returning a reference to an object that has been destroyed, which would lead to undefined behavior if we try to access it.
+
+Note: Don’t return non-const static local variables by reference
+```cpp
+
+#include <iostream>
+#include <string>
+
+const int& getNextId()
+{
+    static int s_x{ 0 }; // note: variable is non-const
+    ++s_x; // generate the next id
+    return s_x; // and return a reference to it
+}
+
+int main()
+{
+    const int& id1 { getNextId() }; // id1 is a reference
+    const int& id2 { getNextId() }; // id2 is a reference
+
+    std::cout << id1 << id2 << '\n';
+
+    return 0;
+}
+```
+
+Note: It’s okay to return reference parameters by reference
+```cpp
+#include <iostream>
+#include <string>
+
+// Takes two std::string objects, returns the one that comes first alphabetically
+const std::string& firstAlphabetical(const std::string& a, const std::string& b)
+{
+	return (a < b) ? a : b; // We can use operator< on std::string to determine which comes first alphabetically
+}
+
+int main()
+{
+	std::string hello { "Hello" };
+	std::string world { "World" };
+
+	std::cout << firstAlphabetical(hello, world) << '\n';
+
+	return 0;
+}
+```
+
+## In and Out parameters
+
+* In parameters
+
+In most cases, a function parameter is used only to receive an input from the caller. Parameters that are used only for receiving input from the caller are sometimes called in parameters.
+
+* Out parameters
+
+In some cases, a function parameter is used only to send an output back to the caller. Parameters that are used only for sending output back to the caller are sometimes called out parameters.
