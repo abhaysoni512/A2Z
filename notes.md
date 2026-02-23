@@ -759,3 +759,272 @@ In most cases, a function parameter is used only to receive an input from the ca
 * Out parameters
 
 In some cases, a function parameter is used only to send an output back to the caller. Parameters that are used only for sending output back to the caller are sometimes called out parameters.
+
+# Chapter 14: Classes and Objects
+
+## What is object-oriented programming?
+
+In object-oriented programming (often abbreviated as OOP), the focus is on creating program-defined data types that contain both properties and a set of well-defined behaviors
+
+## objects :- An object is an instance of a class. It is a concrete entity that has a state (represented by its properties) and behavior (represented by its member functions). Objects are created from classes, which serve as blueprints for defining the structure and behavior of the objects.
+
+## Member functions: Member functions are functions that are defined within a class and operate on the data members of that class. They can access and modify the properties of the class, and they define the behavior of the objects created from that class. Member functions can be called on objects of the class to perform specific actions or to retrieve information about the object's state.
+
+ex:  
+
+```cpp
+// Member function version
+#include <iostream>
+
+struct Date
+{
+    int year {};
+    int month {};
+    int day {};
+
+    void print() // defines a member function named print
+    {
+        std::cout << year << '/' << month << '/' << day;
+    }
+};
+
+int main()
+{
+    Date today { 2020, 10, 14 }; // aggregate initialize our struct
+
+    today.day = 16; // member variables accessed using member selection operator (.)
+    today.print();  // member functions also accessed using member selection operator (.)
+
+    return 0;
+}
+```
+Note: Member functions defined inside the class type definition are implicitly inline, so they will not cause violations of the one-definition rule if the class type definition is included into multiple code files.
+
+Note: Non-static data members are always initialized in declaration order (top-to-bottom in the class/struct). Initializers can reference later-declared members/functions (name lookup allows it), but accessing their uninitialized values causes undefined behavior (UB).
+
+ex: 
+
+```cpp
+struct Foo {
+    int z() { return m_data; }  // Function body runs later, not during init
+    int x() { return y(); }     // Calls later function
+    int m_data { y() };         // Uses y(), which returns constant (no UB)
+    int y() { return 5; }       // Safe, no data access during init
+};
+```
+
+Bad Case:
+
+```cpp
+struct Bad {
+    int m_bad1 { m_data };      // UB: m_data not initialized yet
+    int m_bad2 { fcn() };       // UB: fcn() reads uninitialized m_data
+    int m_data { 5 };           // Declared last, initializes last
+    int fcn() { return m_data; }// Function reads uninit data during init
+};
+```
+
+## Const class objects and const member functions
+
+Const class objects are objects that are declared with the const qualifier. This means that the state of a const object cannot be modified after it has been initialized. Modifying a const object will result in a compile-time error.
+
+ex:
+
+```cpp
+struct Date
+{
+    int year {};
+    int month {};
+    int day {};
+
+    void incrementDay()
+    {
+        ++day;
+    }
+};
+
+int main()
+{
+    const Date today { 2020, 10, 14 }; // const
+
+    today.day += 1;        // compile error: can't modify member of const object
+    today.incrementDay();  // compile error: can't call member function that modifies member of const object
+
+    return 0;
+}
+```
+Note: const class object cannot call any member function member function is not modifying state of the object or not. To allow const objects to call member functions, we can declare those member functions as const member functions but still they can not modify the state of the object.
+
+To address above notes use :-  A const member function is a member function that guarantees it will not modify the object or call any non-const member functions (as they may modify the object). A const member function is declared by adding the const qualifier after the parameter list in the function declaration and definition.
+
+```cpp
+
+#include <iostream>
+
+struct Date
+{
+    int year {};
+    int month {};
+    int day {};
+
+    void print() const // now a const member function
+    {
+        std::cout << year << '/' << month << '/' << day;
+    }
+};
+
+int main()
+{
+    const Date today { 2020, 10, 14 }; // const
+
+    today.print();  // ok: const object can call const member function
+
+    return 0;
+}
+```
+Note: Const member functions may be called on non-const objects, Because const member functions can be called on both const and non-const objects, if a member function does not modify the state of the object, it should be made const.
+
+## Public and private members and access specifiers
+
+Public members of a class are accessible from outside the class, while private members are only accessible from within the class. Access specifiers are used to specify the access level of class members. The three access specifiers in C++ are public, private, and protected.
+
+## Access functions
+
+An access function is a trivial public member function whose job is to retrieve or change the value of a private member variable.
+
+## Getter and setter functions
+Getters (also sometimes called accessors) are public member functions that return the value of a private member variable. Setters (also sometimes called mutators) are public member functions that set the value of a private member variable.
+
+Note: Getters are usually made const, so they can be called on both const and non-const objects. Setters should be non-const, so they can modify the data members.  
+
+## Returning data members by lvalue reference
+
+Member functions can also return data members by (const) lvalue reference. Data members have the same lifetime as the object containing them. Since member functions are always called on an object, and that object must exist in the scope of the caller, it is generally safe for a member function to return a data member by (const) lvalue reference (as the member being returned by reference will still exist in the scope of the caller when the function returns).
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Employee
+{
+	std::string m_name{};
+
+public:
+	void setName(std::string_view name) { m_name = name; }
+	const std::string& getName() const { return m_name; } //  getter returns by const reference
+};
+
+int main()
+{
+	Employee joe{}; // joe exists until end of function
+	joe.setName("Joe");
+
+	std::cout << joe.getName(); // returns joe.m_name by reference
+
+	return 0;
+}
+```
+
+Note: A member function returning a reference should return a reference of the same type as the data member being returned, to avoid unnecessary conversions. Best practice use auto deduction.
+
+ex:
+
+```cpp
+
+#include <iostream>
+#include <string>
+
+class Employee
+{
+	std::string m_name{};
+
+public:
+	void setName(std::string_view name) { m_name = name; }
+	const auto& getName() const { return m_name; } // uses `auto` to deduce return type from m_name
+};
+
+int main()
+{
+	Employee joe{}; // joe exists until end of function
+	joe.setName("Joe");
+
+	std::cout << joe.getName(); // returns joe.m_name by reference
+
+	return 0;
+}
+```
+
+## Rvalue implicit objects and return by reference
+
+An rvalue object is destroyed at the end of the full expression in which it is created. Any references to members of the rvalue object are left dangling at that point.
+
+A reference to a member of an rvalue object can only be safely used within the full expression where the rvalue object is created.
+
+ex :
+
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Employee
+{
+	std::string m_name{};
+
+public:
+	void setName(std::string_view name) { m_name = name; }
+	const std::string& getName() const { return m_name; } //  getter returns by const reference
+};
+
+// createEmployee() returns an Employee by value (which means the returned value is an rvalue)
+Employee createEmployee(std::string_view name)
+{
+	Employee e;
+	e.setName(name);
+	return e;
+}
+
+int main()
+{
+	// Case 1: okay: use returned reference to member of rvalue class object in same expression
+	std::cout << createEmployee("Frank").getName();
+
+	// Case 2: bad: save returned reference to member of rvalue class object for use later
+	const std::string& ref { createEmployee("Garbo").getName() }; // reference becomes dangling when return value of createEmployee() is destroyed
+	std::cout << ref; // undefined behavior
+
+	// Case 3: okay: copy referenced value to local variable for use later
+	std::string val { createEmployee("Hans").getName() }; // makes copy of referenced member
+	std::cout << val; // okay: val is independent of referenced member
+
+	return 0;
+}
+```
+When createEmployee() is called, it will return an Employee object by value. This returned Employee object is an rvalue that will exist until the end of the full expression containing the call to createEmployee(). When that rvalue object is destroyed, any references to members of that object will become dangling.
+
+Note: Do not return non-const references to private data members , Because a reference acts just like the object being referenced, a member function that returns a non-const reference provides direct access to that member (even if the member is private).
+
+ex: 
+```cpp
+#include <iostream>
+
+class Foo
+{
+private:
+    int m_value{ 4 }; // private member
+
+public:
+    int& value() { return m_value; } // returns a non-const reference (don't do this)
+};
+
+int main()
+{
+    Foo f{};                // f.m_value is initialized to default value 4
+    f.value() = 5;          // The equivalent of m_value = 5
+    std::cout << f.value(); // prints 5
+
+    return 0;
+}
+```
+
+Note : Const member functions can’t return non-const references to data members, Because a const member function can be called on a const object, if a const member function were allowed to return a non-const reference to a data member, then it would be possible to modify the state of a const object through that reference, which would violate the constness of the object.
