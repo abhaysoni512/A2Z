@@ -766,9 +766,13 @@ In some cases, a function parameter is used only to send an output back to the c
 
 In object-oriented programming (often abbreviated as OOP), the focus is on creating program-defined data types that contain both properties and a set of well-defined behaviors
 
-## objects :- An object is an instance of a class. It is a concrete entity that has a state (represented by its properties) and behavior (represented by its member functions). Objects are created from classes, which serve as blueprints for defining the structure and behavior of the objects.
+## objects 
 
-## Member functions: Member functions are functions that are defined within a class and operate on the data members of that class. They can access and modify the properties of the class, and they define the behavior of the objects created from that class. Member functions can be called on objects of the class to perform specific actions or to retrieve information about the object's state.
+An object is an instance of a class. It is a concrete entity that has a state (represented by its properties) and behavior (represented by its member functions). Objects are created from classes, which serve as blueprints for defining the structure and behavior of the objects.
+
+## Member functions
+
+Member functions are functions that are defined within a class and operate on the data members of that class. They can access and modify the properties of the class, and they define the behavior of the objects created from that class. Member functions can be called on objects of the class to perform specific actions or to retrieve information about the object's state.
 
 ex:  
 
@@ -1028,3 +1032,165 @@ int main()
 ```
 
 Note : Const member functions can’t return non-const references to data members, Because a const member function can be called on a const object, if a const member function were allowed to return a non-const reference to a data member, then it would be possible to modify the state of a const object through that reference, which would violate the constness of the object.
+
+## The benefits of data hiding (encapsulation)
+
+Interface : The interface of a class type (also called a class interface) defines how a user of the class type will interact with objects of the class type. The interface of a class type is defined by the public members of the class type. By making data members private and providing public member functions to access and modify those data members, we can control how users interact with the data and ensure that it is used in a way that is consistent with the intended design of the class. This can help prevent misuse of the class and make it easier to maintain and update the class in the future.
+
+An interface that is well-designed and easy to use can make it easier for users to understand how to use the class and can help prevent errors and bugs in their code. By hiding the implementation details of the class and providing a clear and concise interface, we can make it easier for users to work with the class and can help ensure that they use it correctly.
+
+Implementation : The implementation of a class type consists of the code that actually makes the class behave as intended. This includes both the member variables that store data, and the bodies of the member functions that contain the program logic and manipulate the member variables.
+
+Data hiding: In programming, data hiding (also called information hiding or data abstraction) is a technique used to enforce the separation of interface and implementation by hiding (making inaccessible) the implementation of a program-defined data type from users.
+
+Implementing data hiding in a C++ class type is simple. First, we ensure the data members of the class type are private (so that the user can not directly access them). Next, we ensure the member functions are public, so that the user can call them.
+
+Advantages of data hiding:
+1. Data hiding allows us to maintain invariants.
+
+```cpp
+#include <iostream>
+#include <string>
+
+struct Employee // members are public by default
+{
+    std::string name{ "John" };
+    char firstInitial{ 'J' }; // should match first initial of name
+
+    void print() const
+    {
+        std::cout << "Employee " << name << " has first initial " << firstInitial << '\n';
+    }
+};
+
+int main()
+{
+    Employee e{}; // defaults to "John" and 'J'
+    e.print();
+
+    e.name = "Mark"; // change employee's name to "Mark"
+    e.print(); // prints wrong initial
+
+    return 0;
+}
+```
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Employee // members are private by default
+{
+    std::string m_name{};
+    char m_firstInitial{};
+
+public:
+    void setName(std::string_view name)
+    {
+        m_name = name;
+        m_firstInitial = name.front(); // use std::string::front() to get first letter of `name`
+    }
+
+    void print() const
+    {
+        std::cout << "Employee " << m_name << " has first initial " << m_firstInitial << '\n';
+    }
+};
+
+int main()
+{
+    Employee e{};
+    e.setName("John");
+    e.print();
+
+    e.setName("Mark");
+    e.print();
+
+    return 0;
+}
+```
+
+Because the name member is public, the code in main() is able to set e.name to "Mark", and the firstInitial member is not updated. Our invariant is broken, and our second call to print() doesn’t work as expected.
+
+
+2. Data hiding makes it possible to change implementation details without breaking existing programs
+
+```cpp
+#include <iostream>
+
+struct Something
+{
+    int value1 {};
+    int value2 {};
+    int value3 {};
+};
+
+int main()
+{
+    Something something;
+    something.value1 = 5;
+    std::cout << something.value1 << '\n';
+}
+```
+
+While this program works fine, what would happen if we decided to change the implementation details of the class, like this?
+
+```cpp
+#include <iostream>
+
+struct Something
+{
+    int value[3] {}; // uses an array of 3 values
+};
+
+int main()
+{
+    Something something;
+    something.value1 = 5;
+    std::cout << something.value1 << '\n';
+}
+```
+
+Now, it will no longer compile, because the implementation details of the class have changed, and the code in main() is directly accessing the data members of the class. If we had used data hiding and provided public member functions to access and modify the data, we could have changed the implementation details without breaking existing programs that use the class.
+
+best solution :
+
+![alt text](image-9.png)
+
+3. Data hiding allows us to do better error detection (and handling)
+
+```cpp
+
+#include <iostream>
+#include <string>
+
+class Employee
+{
+    std::string m_name{ "John" };
+
+public:
+    void setName(std::string_view name)
+    {
+        m_name = name;
+    }
+
+    // use std::string::front() to get first letter of `m_name`
+    char firstInitial() const { return m_name.front(); }
+
+    void print() const
+    {
+        std::cout << "Employee " << m_name << " has first initial " << firstInitial() << '\n';
+    }
+};
+
+int main()
+{
+    Employee e{}; // defaults to "John"
+    e.setName("Mark");
+    e.print();
+
+    return 0;
+}
+```
+
+## Constructor
