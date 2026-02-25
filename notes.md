@@ -375,7 +375,8 @@ To handle such cases, we can define a function template with multiple template p
 template <typename T1, typename T2>
 
 
-## Abbreviated function templates (C++20): C++20 introduces a new use of the auto keyword: When the auto keyword is used as a parameter type in a normal function, the compiler will automatically convert the function into a function template with each auto parameter becoming an independent template type parameter. This method for creating a function template is called an abbreviated function template.
+## Abbreviated function templates (C++20): 
+C++20 introduces a new use of the auto keyword: When the auto keyword is used as a parameter type in a normal function, the compiler will automatically convert the function into a function template with each auto parameter becoming an independent template type parameter. This method for creating a function template is called an abbreviated function template.
 
     auto max(auto x, auto y)
     {
@@ -390,7 +391,8 @@ template <typename T1, typename T2>
         return (x < y) ? y : x;
     }
 
-## 11.9 - Non-type template parameters: A non-type template parameter is a template parameter with a fixed type that serves as a placeholder for a constexpr value passed in as a template argument.
+## 11.9 - Non-type template parameters
+A non-type template parameter is a template parameter with a fixed type that serves as a placeholder for a constexpr value passed in as a template argument.
 
 A non-type template parameter can be any of the following types:
 
@@ -464,7 +466,8 @@ add.cpp:
 
 # Chapter 12 : Compound Types : References and pointers:
     
-## Lvalue and rvalue expressions :- An lvalue is an expression that refers to a memory location and allows us to take the address of that location using the address-of operator (&). An rvalue is an expression that does not refer to a memory location and cannot have its address taken.Commonly seen rvalues include literals (except C-style string literals, which are lvalues) and the return value of functions and operators that return by value. Rvalues aren’t identifiable (meaning they have to be used immediately), and only exist within the scope of the expression in which they are used.
+## Lvalue and rvalue expressions
+ An lvalue is an expression that refers to a memory location and allows us to take the address of that location using the address-of operator (&). An rvalue is an expression that does not refer to a memory location and cannot have its address taken.Commonly seen rvalues include literals (except C-style string literals, which are lvalues) and the return value of functions and operators that return by value. Rvalues aren’t identifiable (meaning they have to be used immediately), and only exist within the scope of the expression in which they are used.
 
 ex: 
 ```cpp
@@ -487,9 +490,11 @@ int main()
 
     return 0;
 }
-````
+```
 
-### Lvalue references : An lvalue reference is a reference that can only bind to lvalues. It is declared using the & symbol. For example:
+### Lvalue references 
+ 
+An lvalue reference is a reference that can only bind to lvalues. It is declared using the & symbol. For example:
 ```cpp
 int x { 5 }; // x is an lvalue
 int& ref { x }; // ref is an lvalue reference to x
