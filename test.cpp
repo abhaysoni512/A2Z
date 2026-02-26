@@ -16,6 +16,7 @@ public:
 
 int main() {
     Foo f1;      // OK: Calls the defaulted default ctor (m_x default-initialized to indeterminate value).
+    f1.print();  // May print an indeterminate value for m_x.
     Foo f2(42);  // OK: Calls the parameterized ctor.
     return 0;
 }
