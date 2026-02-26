@@ -7,7 +7,7 @@ public:
     Foo(int x) : m_x(x) {}  // Parameterized constructor declared → no implicit default ctor.
 
     // Foo() {}  // This would be user-provided (non-trivial).
-    Foo() = default;  // Explicitly defaulted: Compiler generates it (trivial if possible).
+    //Foo() = default;  // Explicitly defaulted: Compiler generates it (trivial if possible).
 
     void print() const {
         std::cout << "Foo(" << m_x << ")\n";
