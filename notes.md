@@ -1199,3 +1199,71 @@ int main()
 ```
 
 ## Constructor
+
+A constructor is a special member function of a class that is automatically called when an object of the class is created. The purpose of a constructor is to initialize the data members of the class and to set up any necessary resources for the object. A constructor has the same name as the class and does not have a return type (not even void).
+
+### Working of constructor:
+
+* They typically perform initialization of any member variables (via a member initialization list)
+* They may perform other setup functions (via statements in the body of the constructor). This might include things such as error checking the initialization values, opening a file or database, etc…
+
+Note: A constructor needs to be able to initialize the object being constructed -- therefore, a constructor must not be const.
+
+### Difference between constructor and setter function:
+
+Constructors are designed to initialize an entire object at the point of instantiation. Setters are designed to assign a value to a single member of an existing object.
+
+## Constructor member initializer lists
+
+Use Member initialization via a member initialization list
+
+```cpp
+#include <iostream>
+
+class Foo
+{
+private:
+    int m_x {};
+    int m_y {};
+
+public:
+    Foo(int x, int y)
+        : m_x { x }, m_y { y } // here's our member initialization list
+    {
+        std::cout << "Foo(" << x << ", " << y << ") constructed\n";
+    }
+
+    void print() const
+    {
+        std::cout << "Foo(" << m_x << ", " << m_y << ")\n";
+    }
+};
+
+int main()
+{
+    Foo foo{ 6, 7 };
+    foo.print();
+
+    return 0;
+}
+```
+Note: The member initializer list is defined after the constructor parameters. It begins with a colon (:), and then lists each member to initialize along with the initialization value for that variable, separated by a comma. You must use a direct form of initialization here (preferably using braces, but parentheses works as well) -- using copy initialization (with an equals) does not work here.
+
+### Member initializer list formatting
+
+![alt text](image-14.png)
+
+### Member initialization order
+
+![alt text](image-15.png)
+
+Note: To help prevent such errors, members in the member initializer list should be listed in the order in which they are defined in the class. Some compilers will issue a warning if members are initialized out of order
+
+Note: constant or reference data members can only be initialsed using list initlization else if we use assignment for intilizing members variable result into compile time error
+
+ex: 
+
+![alt text](image-16.png)
+
+![alt text](image-17.png)
+
