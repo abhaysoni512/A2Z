@@ -1491,3 +1491,466 @@ int main()
 ```
 
 Here, When e1 { "James" } is initialized, matching constructor Employee(std::string_view) is called with parameter name set to "James". The member initializer list of this constructor delegates initialization to other constructor, so Employee(std::string_view, int) is then called. The value of name ("James") is passed as the first argument, and literal 0 is passed as the second argument. The member initializer list of the delegated constructor then initializes the members. The body of the delegated constructor then runs. Then control returns to the initial constructor, whose (empty) body runs. Finally, control returns to the caller.
+
+
+## Temporary class objects
+
+* This will throw compile error : -
+
+```cpp
+#include <iostream>
+
+void addOne(int& value) // pass by non-const references requires lvalue
+{
+    ++value;
+}
+
+int main()
+{
+    int sum { 5 + 3 };
+    addOne(sum);   // okay, sum is an lvalue
+
+    addOne(5 + 3); // compile error: not an lvalue
+
+    return 0;
+}
+```
+Reason: The expression 5 + 3 creates a temporary object that holds the result of the addition. This temporary object is an rvalue, which means it does not have a persistent memory address and cannot be modified. When we try to pass this temporary object to the addOne function, which expects a non-const reference (int&), it results in a compile error because non-const references cannot bind to rvalues (temporary objects).
+
+* Temporary class objects example:
+
+```cpp
+
+#include <iostream>
+
+class IntPair
+{
+private:
+    int m_x{};
+    int m_y{};
+
+public:
+    IntPair(int x, int y)
+        : m_x { x }, m_y { y }
+    {}
+
+    int x() const { return m_x; }
+    int y() const { return m_y; }
+};
+
+void print(IntPair p)
+{
+    std::cout << "(" << p.x() << ", " << p.y() << ")\n";
+}
+
+int main()
+{
+    // Case 1: Pass variable
+    IntPair p { 3, 4 };
+    print(p); // prints (3, 4)
+
+    return 0;
+}
+```
+
+##  copy constructor
+
+A copy constructor is a constructor that is used to initialize an object with an existing object of the same type.
+
+By default, the implicit copy constructor will do memberwise initialization. This means each member will be initialized using the corresponding member of the class passed in as the initializer.
+
+ex:
+
+```cpp
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator{ 0 };
+    int m_denominator{ 1 };
+
+public:
+    // Default constructor
+    Fraction(int numerator=0, int denominator=1)
+        : m_numerator{numerator}, m_denominator{denominator}
+    {
+    }
+
+    // Copy constructor
+    Fraction(const Fraction& fraction)
+        // Initialize our members using the corresponding member of the parameter
+        : m_numerator{ fraction.m_numerator }
+        , m_denominator{ fraction.m_denominator }
+    {
+        std::cout << "Copy constructor called\n"; // just to prove it works
+    }
+
+    void print() const
+    {
+        std::cout << "Fraction(" << m_numerator << ", " << m_denominator << ")\n";
+    }
+};
+
+int main()
+{
+    Fraction f { 5, 3 };  // Calls Fraction(int, int) constructor
+    Fraction fCopy { f }; // Calls Fraction(const Fraction&) copy constructor
+
+    f.print();
+    fCopy.print();
+
+    return 0;
+}
+```
+
+Why do we require const Fraction& as parameter for copy constructor?
+Ans: The copy constructor takes its parameter as a const reference (const Fraction&) to allow it to accept both const and non-const objects. If the parameter were a non-const reference (Fraction&), it would not be able to accept const objects, which would limit the usability of the copy constructor. By using a const reference, we can ensure that the copy constructor can be called with any object of the class type, regardless of whether it is const or not. Additionally, why reference is used instead of passing by value is because passing by value would require the copy constructor to be called to create a copy of the object being passed in, which would lead to infinite recursion. By using a reference, we can avoid this issue and allow the copy constructor to function properly.
+
+* Cases when copy constructor is called:
+1. When an object is initialized from another object of the same type (e.g., Fraction fCopy { f };).
+2. Pass by value and the copy constructor:
+```cpp
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator{ 0 };
+    int m_denominator{ 1 };
+
+public:
+    // Default constructor
+    Fraction(int numerator = 0, int denominator = 1)
+        : m_numerator{ numerator }, m_denominator{ denominator }
+    {
+    }
+
+    // Copy constructor
+    Fraction(const Fraction& fraction)
+        : m_numerator{ fraction.m_numerator }
+        , m_denominator{ fraction.m_denominator }
+    {
+        std::cout << "Copy constructor called\n";
+    }
+
+    void print() const
+    {
+        std::cout << "Fraction(" << m_numerator << ", " << m_denominator << ")\n";
+    }
+};
+
+void printFraction(Fraction f) // f is pass by value
+{
+    f.print();
+}
+
+int main()
+{
+    Fraction f{ 5, 3 };
+
+    printFraction(f); // f is copied into the function parameter using copy constructor
+
+    return 0;
+}
+```
+
+3. Return by value and the copy constructor
+
+return by value creates a temporary object (holding a copy of the return value) that is passed back to the caller. When the return type and the return value are the same class type, the temporary object is initialized by implicitly invoking the copy constructor.
+
+```cpp
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator{ 0 };
+    int m_denominator{ 1 };
+
+public:
+    // Default constructor
+    Fraction(int numerator = 0, int denominator = 1)
+        : m_numerator{ numerator }, m_denominator{ denominator }
+    {
+    }
+
+    // Copy constructor
+    Fraction(const Fraction& fraction)
+        : m_numerator{ fraction.m_numerator }
+        , m_denominator{ fraction.m_denominator }
+    {
+        std::cout << "Copy constructor called\n";
+    }
+
+    void print() const
+    {
+        std::cout << "Fraction(" << m_numerator << ", " << m_denominator << ")\n";
+    }
+};
+
+void printFraction(Fraction f) // f is pass by value
+{
+    f.print();
+}
+
+Fraction generateFraction(int n, int d)
+{
+    Fraction f{ n, d };
+    return f;
+}
+
+int main()
+{
+    Fraction f2 { generateFraction(1, 2) }; // Fraction is returned using copy constructor
+
+    printFraction(f2); // f2 is copied into the function parameter using copy constructor
+
+    return 0;
+}
+```
+
+When generateFraction returns a Fraction back to main, a temporary Fraction object is created and initialized using the copy constructor.
+
+Because this temporary is used to initialize Fraction f2, this invokes the copy constructor again to copy the temporary into f2.
+
+And when f2 is passed to printFraction(), the copy constructor is called a third time.
+
+Thus, on the author’s machine, this example prints:
+
+Copy constructor called
+Copy constructor called
+Copy constructor called
+Fraction(1, 2)
+
+### Using = delete to prevent copies
+
+Occasionally we run into cases where we do not want objects of a certain class to be copyable. We can prevent this by marking the copy constructor function as deleted, using the = delete syntax:
+
+```cpp
+#include <iostream>
+
+class Fraction
+{
+private:
+    int m_numerator{ 0 };
+    int m_denominator{ 1 };
+
+public:
+    // Default constructor
+    Fraction(int numerator=0, int denominator=1)
+        : m_numerator{numerator}, m_denominator{denominator}
+    {
+    }
+
+    // Delete the copy constructor so no copies can be made
+    Fraction(const Fraction& fraction) = delete;
+
+    void print() const
+    {
+        std::cout << "Fraction(" << m_numerator << ", " << m_denominator << ")\n";
+    }
+};
+
+int main()
+{
+    Fraction f { 5, 3 };
+    Fraction fCopy { f }; // compile error: copy constructor has been deleted
+
+    return 0;
+}
+```
+
+##  Class initialization and copy elision
+
+```cpp
+#include <iostream>
+
+class Foo
+{
+public:
+
+    // Default constructor
+    Foo()
+    {
+        std::cout << "Foo()\n";
+    }
+
+    // Normal constructor
+    Foo(int x)
+    {
+        std::cout << "Foo(int) " << x << '\n';
+    }
+
+    // Copy constructor
+    Foo(const Foo&)
+    {
+        std::cout << "Foo(const Foo&)\n";
+    }
+};
+
+int main()
+{
+    // Calls Foo() default constructor
+    Foo f1;           // default initialization
+    Foo f2{};         // value initialization (preferred)
+
+    // Calls foo(int) normal constructor
+    Foo f3 = 3;       // copy initialization (non-explicit constructors only)
+    Foo f4(4);        // direct initialization
+    Foo f5{ 5 };      // direct list initialization (preferred)
+    Foo f6 = { 6 };   // copy list initialization (non-explicit constructors only)
+
+    // Calls foo(const Foo&) copy constructor
+    Foo f7 = f3;      // copy initialization
+    Foo f8(f3);       // direct initialization
+    Foo f9{ f3 };     // direct list initialization (preferred)
+    Foo f10 = { f3 }; // copy list initialization
+
+    return 0;
+}
+```
+
+## Copy elision
+
+Copy elision is a compiler optimization technique that allows the compiler to remove unnecessary copying of objects. In other words, in cases where the compiler would normally call a copy constructor, the compiler is free to rewrite the code to avoid the call to the copy constructor altogether. When the compiler optimizes away a call to the copy constructor, we say the constructor has been elided. 
+
+Note: Mandatory copy elision in C++17 .
+
+## Converting constructors and the explicit keyword
+
+### User Defined Conversion
+
+ex. 
+
+```cpp
+
+#include <iostream>
+
+class Foo
+{
+private:
+    int m_x{};
+public:
+    Foo(int x)
+        : m_x{ x }
+    {
+    }
+
+    int getX() const { return m_x; }
+};
+
+void printFoo(Foo f) // has a Foo parameter
+{
+    std::cout << f.getX();
+}
+
+int main()
+{
+    printFoo(5); // we're supplying an int argument
+
+    return 0;
+}
+```
+
+Here, we are able to pass an int (5) to printFoo(), which expects a Foo object. This is because the compiler implicitly converts the int argument (5) to a Foo object by calling the Foo(int) constructor. This process is known as user-defined conversion, and the constructor that allows this conversion is called a converting constructor.
+
+Note: Only one user-defined conversion may be applied
+
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Employee
+{
+private:
+    std::string m_name{};
+
+public:
+    Employee(std::string_view name)
+        : m_name{ name }
+    {
+    }
+
+    const std::string& getName() const { return m_name; }
+};
+
+void printEmployee(Employee e) // has an Employee parameter
+{
+    std::cout << e.getName();
+}
+
+int main()
+{
+    printEmployee("Joe"); // we're supplying an string literal argument
+
+    return 0;
+}
+```
+
+Above, won't be compiling because only one user-defined conversion may be applied to perform an implicit conversion, and this example requires two. First, our C-style string literal has to be converted to a std::string_view (using a std::string_view converting constructor), and then our std::string_view has to be converted into an Employee (using the Employee(std::string_view) converting constructor).
+
+### The explicit keyword
+
+explicit keyword to tell the compiler that a constructor should not be used as a converting constructor.
+
+Making a constructor explicit has two notable consequences:
+
+* An explicit constructor cannot be used to do copy initialization or copy list initialization.
+* An explicit constructor cannot be used to do implicit conversions (since this uses copy initialization or copy list initialization).
+
+ex.
+
+```cpp
+
+#include <iostream>
+
+class Dollars
+{
+private:
+    int m_dollars{};
+
+public:
+    explicit Dollars(int d) // now explicit
+        : m_dollars{ d }
+    {
+    }
+
+    int getDollars() const { return m_dollars; }
+};
+
+void print(Dollars d)
+{
+    std::cout << "$" << d.getDollars();
+}
+
+int main()
+{
+    print(5); // compilation error because Dollars(int) is explicit
+
+    return 0;
+}
+```
+
+Note: If we want to use an explicit constructor to perform a conversion, we use direct and direct list initialization:
+
+```cpp
+
+// Assume Dollars(int) is explicit
+int main()
+{
+    Dollars d1(5); // ok
+    Dollars d2{5}; // ok
+}
+
+i.e for above code :
+
+print(Dollars{5}); // ok: direct list initialization of a temporary Dollars object, which is then passed to print()
+
+Also, using static_cast can also be used to perform an explicit conversion:
+
+print(static_cast<Dollars>(5)); // ok: static_cast performs an explicit conversion to Dollars, which is then passed to print()
+
+```
+
