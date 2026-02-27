@@ -1,43 +1,22 @@
-// C++ code here
 #include <iostream>
-#include <optional>
 
-class Fraction
-{
-private:
-    int m_numerator { 0 };
-    int m_denominator { 1 };
-
-    // private constructor can't be called by public
-    Fraction(int numerator, int denominator):
-        m_numerator { numerator }, m_denominator { denominator }
-    {
-    }
-
+class Foo {
 public:
-    // Allow this function to access private members
-    friend std::optional<Fraction> createFraction(int numerator, int denominator);
+    int m_x;
+
+    Foo(int x) : m_x(x) {}  // Parameterized constructor declared → no implicit default ctor.
+
+    // Foo() {}  // This would be user-provided (non-trivial).
+    //Foo() = default;  // Explicitly defaulted: Compiler generates it (trivial if possible).
+
+    void print() const {
+        std::cout << "Foo(" << m_x << ")\n";
+    }
 };
 
-std::optional<Fraction> createFraction(int numerator, int denominator)
-{
-    if (denominator == 0)
-        return {};
-
-    return Fraction{numerator, denominator};
-}
-
-int main()
-{
-    auto f1 { createFraction(0, 1) };
-    if (f1)
-    {
-        std::cout << "Fraction created\n";
-    }
-
-    auto f2 { createFraction(0, 0) };
-    if (!f2)
-    {
-        std::cout << "Bad fraction\n";
-    }
+int main() {
+    Foo f1;      // OK: Calls the defaulted default ctor (m_x default-initialized to indeterminate value).
+    f1.print();  // May print an indeterminate value for m_x.
+    Foo f2(42);  // OK: Calls the parameterized ctor.
+    return 0;
 }
