@@ -375,7 +375,8 @@ To handle such cases, we can define a function template with multiple template p
 template <typename T1, typename T2>
 
 
-## Abbreviated function templates (C++20): C++20 introduces a new use of the auto keyword: When the auto keyword is used as a parameter type in a normal function, the compiler will automatically convert the function into a function template with each auto parameter becoming an independent template type parameter. This method for creating a function template is called an abbreviated function template.
+## Abbreviated function templates (C++20): 
+C++20 introduces a new use of the auto keyword: When the auto keyword is used as a parameter type in a normal function, the compiler will automatically convert the function into a function template with each auto parameter becoming an independent template type parameter. This method for creating a function template is called an abbreviated function template.
 
     auto max(auto x, auto y)
     {
@@ -390,7 +391,8 @@ template <typename T1, typename T2>
         return (x < y) ? y : x;
     }
 
-## 11.9 - Non-type template parameters: A non-type template parameter is a template parameter with a fixed type that serves as a placeholder for a constexpr value passed in as a template argument.
+## 11.9 - Non-type template parameters
+A non-type template parameter is a template parameter with a fixed type that serves as a placeholder for a constexpr value passed in as a template argument.
 
 A non-type template parameter can be any of the following types:
 
@@ -464,6 +466,804 @@ add.cpp:
 
 # Chapter 12 : Compound Types : References and pointers:
     
-* Lvalue and rvalue expressions :-
+## Lvalue and rvalue expressions
+ An lvalue is an expression that refers to a memory location and allows us to take the address of that location using the address-of operator (&). An rvalue is an expression that does not refer to a memory location and cannot have its address taken.Commonly seen rvalues include literals (except C-style string literals, which are lvalues) and the return value of functions and operators that return by value. Rvalues aren’t identifiable (meaning they have to be used immediately), and only exist within the scope of the expression in which they are used.
 
-    
+ex: 
+```cpp
+int return5()
+{
+    return 5;
+}
+
+int main()
+{
+    int x{ 5 }; // 5 is an rvalue expression
+    const double d{ 1.2 }; // 1.2 is an rvalue expression
+
+    int y { x }; // x is a modifiable lvalue expression
+    const double e { d }; // d is a non-modifiable lvalue expression
+    int z { return5() }; // return5() is an rvalue expression (since the result is returned by value)
+
+    int w { x + 1 }; // x + 1 is an rvalue expression
+    int q { static_cast<int>(d) }; // the result of static casting d to an int is an rvalue expression
+
+    return 0;
+}
+```
+
+### Lvalue references 
+ 
+An lvalue reference is a reference that can only bind to lvalues. It is declared using the & symbol. For example:
+```cpp
+int x { 5 }; // x is an lvalue
+int& ref { x }; // ref is an lvalue reference to x
+```
+Note : Any change made to ref will also change x, since ref is just another name for x.
+
+Note : Once initialized, a reference in C++ cannot be reseated, meaning it cannot be changed to reference another object. If we try to assign a new value to a reference, we are actually assigning a new value to the object that the reference is bound to, not changing the reference itself.
+
+ex:
+```cpp
+int x { 5 };
+int& ref { x }; // ref is an lvalue reference to x
+ref = 10; // this changes the value of x to 10, but ref still references x
+cout << x << '\n'; // outputs 10
+```
+
+Note: references aren't objects themselves, but rather aliases for other objects. They don't have their own memory address, and they can't be null. This is why references must be initialized when they are declared, and why they can't be reseated to refer to a different object later on.
+
+##  Lvalue references to const:
+
+```cpp
+const int x { 5 }; // x is a non-modifiable (const) lvalue
+int& ref { x }; // error: ref can not bind to non-modifiable lvalue
+// This is not allowed because ref is a modifiable lvalue reference, and it cannot bind to a non-modifiable (const) lvalue like x. To fix this, we can declare ref as a reference to const:
+const int& ref { x }; // ref is a reference to const, and can bind to x
+```
+
+Also,
+
+```cpp
+int x { 5 }; // x is a modifiable lvalue
+const int& ref { x }; // ref is a reference to const, and can bind to
+
+// This is allowed because ref is a reference to const, which can bind to a modifiable lvalue like x. However, since ref is a reference to const, we cannot use it to modify the value of x through ref. Any attempt to do so will result in a compile error.
+ ```
+
+Note: Unlike a reference to non-const (which can only bind to modifiable lvalues), a reference to const can bind to modifiable lvalues, non-modifiable lvalues, and rvalues. Therefore, if we make a reference parameter const, then it will be able to bind to any type of argument passed to the function, which can be useful for writing more flexible and reusable code.
+
+
+## Pointers
+
+A pointer is an object that holds a memory address (typically of another variable) as its value. This allows us to store the address of some other object to use later.
+
+Note : The address-of operator returns a pointer
+
+```cpp
+#include <iostream>
+#include <typeinfo>
+
+int main()
+{
+	int x{ 4 };
+	std::cout << typeid(x).name() << '\n';  // print the type of x
+	std::cout << typeid(&x).name() << '\n'; // print the type of &x
+
+	return 0;
+}
+```
+
+output:
+```
+int
+int *
+```
+
+### Dangling pointers
+
+a dangling pointer is a pointer that is holding the address of an object that is no longer valid (e.g. because it has been destroyed).
+
+### Pointers and const
+
+```cpp
+int main()
+{
+    const int x { 5 }; // x is now const
+    int* ptr { &x };   // compile error: cannot convert from const int* to int* or error: cannot initialize a variable of type 'int *' with an rvalue of type 'const int *'
+
+
+    return 0;
+}
+
+* Pointer to const : A pointer to const is a pointer that points to a const object. This means that we cannot use the pointer to modify the value of the object it points to, but we can change the pointer itself to point to a different object.
+
+```cpp
+int main()
+{
+    const int x { 5 }; // x is a const int
+    const int* ptr { &x }; // ptr is a pointer to const int, and can point to x
+    *ptr = 10; // compile error: cannot modify the value of x through ptr
+    return 0;
+}
+```
+
+Note: ptr points to a const int. Because the data type being pointed to is const, the value being pointed to can’t be changed. However, because a pointer to const is not const itself (it just points to a const value), we can change what the pointer is pointing at by assigning the pointer a new address:
+
+```cpp
+int main()
+{
+    const int x{ 5 };
+    const int* ptr { &x }; // ptr points to const int x
+
+    const int y{ 6 };
+    ptr = &y; // okay: ptr now points at const int y
+
+    return 0;
+}
+
+Note: Just like with references, we can also have pointers to const that point to modifiable objects. This is allowed because the pointer itself is not const, but rather it points to a const value. However, since the pointer points to a const value, we cannot use it to modify the value of the object through the pointer.
+
+```cpp
+int main()
+{
+    int x{ 5 }; // x is a modifiable int
+    const int* ptr { &x }; // ptr is a pointer to const int, and can point to x
+    *ptr = 10; // compile error: cannot modify the value of x through ptr  
+    return 0;
+}
+```
+
+* Const pointer :  A const pointer is a pointer that is itself const, meaning that we cannot change the pointer to point to a different object after it has been initialized. However, we can still modify the value of the object that the const pointer points to (unless the object itself is also const).
+
+```cpp
+int main()
+{
+    int x{ 5 }; // x is a modifiable int
+    int* const ptr { &x }; // ptr is a const pointer to int, and can point to x
+    *ptr = 10; // okay: we can modify the value of x through ptr
+    int y{ 6 };
+    ptr = &y; // compile error: cannot change where ptr points (ptr is const)
+
+    return 0;
+}
+```
+
+## Pass by address
+
+Why we required pass by address? : Pass by value and pass by reference are the two most common ways to pass arguments to functions in C++. However, there are some cases where neither of these methods is suitable. For example, if we want to pass a large object to a function, passing by value can be inefficient because it involves making a copy of the object. On the other hand, if we want to allow the function to modify the argument, passing by reference may not be appropriate because it can lead to unintended side effects. In such cases, pass by address can be a useful alternative.
+
+c++ provides a way to pass values to functions by address using pointers. With pass by address, instead of providing an object as an argument, the caller provides an object’s address (via a pointer). 
+
+```cpp
+void printByValue(std::string val) // The function parameter is a copy of str
+{
+    std::cout << val << '\n'; // print the value via the copy
+}
+
+void printByReference(const std::string& ref) // The function parameter is a reference that binds to str
+{
+    std::cout << ref << '\n'; // print the value via the reference
+}
+
+void printByAddress(const std::string* ptr) // The function parameter is a pointer that holds the address of str
+{
+    std::cout << *ptr << '\n'; // print the value via the dereferenced pointer
+}
+
+int main()
+{
+    std::string str { "Hello, world!" };
+
+    printByValue(str); // pass by value
+    printByReference(str); // pass by reference
+    printByAddress(&str); // pass by address (pass the address of str)
+
+    return 0;
+}
+```
+
+* Pass by address… by reference?
+
+we can also pass pointers by reference, which allows us to modify the pointer itself (i.e., change where it points) within the function. This can be useful when we want to allow a function to modify the pointer argument to point to a different object.
+
+```cpp
+void modifyPointer(int*& ptr) // ptr is a reference to a pointer to int
+{
+    static int y { 10 }; // create a static int to point to (static so that it remains valid after the function returns)
+    ptr = &y; // modify the pointer to point to y
+}
+
+int main()
+{
+    int x { 5 };
+    int* ptr { &x }; // ptr initially points to x
+
+    modifyPointer(ptr); // pass the pointer by reference to the function
+    std::cout << *ptr << '\n'; // outputs 10, since ptr now points to y
+}
+```
+
+## Return by reference and return by address
+
+* Return by reference : A function can return a reference to an object, which allows the caller to access and modify the object directly through the reference. This can be useful for returning large objects without incurring the overhead of copying, or for allowing the caller to modify an object that is owned by the function.
+
+```cpp
+#include <iostream>
+#include <string>
+
+const std::string& getProgramName() // returns a const reference
+{
+    static const std::string s_programName { "Calculator" }; // has static duration, destroyed at end of program
+
+    return s_programName;
+}
+
+int main()
+{
+    std::cout << "This program is named " << getProgramName();
+
+    return 0;
+}
+```
+
+Note: The object being returned by reference must exist after the function returns, otherwise we would be returning a reference to an object that has been destroyed, which would lead to undefined behavior if we try to access it.
+
+Note: Don’t return non-const static local variables by reference
+```cpp
+
+#include <iostream>
+#include <string>
+
+const int& getNextId()
+{
+    static int s_x{ 0 }; // note: variable is non-const
+    ++s_x; // generate the next id
+    return s_x; // and return a reference to it
+}
+
+int main()
+{
+    const int& id1 { getNextId() }; // id1 is a reference
+    const int& id2 { getNextId() }; // id2 is a reference
+
+    std::cout << id1 << id2 << '\n';
+
+    return 0;
+}
+```
+
+Note: It’s okay to return reference parameters by reference
+```cpp
+#include <iostream>
+#include <string>
+
+// Takes two std::string objects, returns the one that comes first alphabetically
+const std::string& firstAlphabetical(const std::string& a, const std::string& b)
+{
+	return (a < b) ? a : b; // We can use operator< on std::string to determine which comes first alphabetically
+}
+
+int main()
+{
+	std::string hello { "Hello" };
+	std::string world { "World" };
+
+	std::cout << firstAlphabetical(hello, world) << '\n';
+
+	return 0;
+}
+```
+
+## In and Out parameters
+
+* In parameters
+
+In most cases, a function parameter is used only to receive an input from the caller. Parameters that are used only for receiving input from the caller are sometimes called in parameters.
+
+* Out parameters
+
+In some cases, a function parameter is used only to send an output back to the caller. Parameters that are used only for sending output back to the caller are sometimes called out parameters.
+
+# Chapter 14: Classes and Objects
+
+## What is object-oriented programming?
+
+In object-oriented programming (often abbreviated as OOP), the focus is on creating program-defined data types that contain both properties and a set of well-defined behaviors
+
+## objects 
+
+An object is an instance of a class. It is a concrete entity that has a state (represented by its properties) and behavior (represented by its member functions). Objects are created from classes, which serve as blueprints for defining the structure and behavior of the objects.
+
+## Member functions
+
+Member functions are functions that are defined within a class and operate on the data members of that class. They can access and modify the properties of the class, and they define the behavior of the objects created from that class. Member functions can be called on objects of the class to perform specific actions or to retrieve information about the object's state.
+
+ex:  
+
+```cpp
+// Member function version
+#include <iostream>
+
+struct Date
+{
+    int year {};
+    int month {};
+    int day {};
+
+    void print() // defines a member function named print
+    {
+        std::cout << year << '/' << month << '/' << day;
+    }
+};
+
+int main()
+{
+    Date today { 2020, 10, 14 }; // aggregate initialize our struct
+
+    today.day = 16; // member variables accessed using member selection operator (.)
+    today.print();  // member functions also accessed using member selection operator (.)
+
+    return 0;
+}
+```
+Note: Member functions defined inside the class type definition are implicitly inline, so they will not cause violations of the one-definition rule if the class type definition is included into multiple code files.
+
+Note: Non-static data members are always initialized in declaration order (top-to-bottom in the class/struct). Initializers can reference later-declared members/functions (name lookup allows it), but accessing their uninitialized values causes undefined behavior (UB).
+
+ex: 
+
+```cpp
+struct Foo {
+    int z() { return m_data; }  // Function body runs later, not during init
+    int x() { return y(); }     // Calls later function
+    int m_data { y() };         // Uses y(), which returns constant (no UB)
+    int y() { return 5; }       // Safe, no data access during init
+};
+```
+
+Bad Case:
+
+```cpp
+struct Bad {
+    int m_bad1 { m_data };      // UB: m_data not initialized yet
+    int m_bad2 { fcn() };       // UB: fcn() reads uninitialized m_data
+    int m_data { 5 };           // Declared last, initializes last
+    int fcn() { return m_data; }// Function reads uninit data during init
+};
+```
+
+## Const class objects and const member functions
+
+Const class objects are objects that are declared with the const qualifier. This means that the state of a const object cannot be modified after it has been initialized. Modifying a const object will result in a compile-time error.
+
+ex:
+
+```cpp
+struct Date
+{
+    int year {};
+    int month {};
+    int day {};
+
+    void incrementDay()
+    {
+        ++day;
+    }
+};
+
+int main()
+{
+    const Date today { 2020, 10, 14 }; // const
+
+    today.day += 1;        // compile error: can't modify member of const object
+    today.incrementDay();  // compile error: can't call member function that modifies member of const object
+
+    return 0;
+}
+```
+Note: const class object cannot call any member function member function is not modifying state of the object or not. To allow const objects to call member functions, we can declare those member functions as const member functions but still they can not modify the state of the object.
+
+To address above notes use :-  A const member function is a member function that guarantees it will not modify the object or call any non-const member functions (as they may modify the object). A const member function is declared by adding the const qualifier after the parameter list in the function declaration and definition.
+
+```cpp
+
+#include <iostream>
+
+struct Date
+{
+    int year {};
+    int month {};
+    int day {};
+
+    void print() const // now a const member function
+    {
+        std::cout << year << '/' << month << '/' << day;
+    }
+};
+
+int main()
+{
+    const Date today { 2020, 10, 14 }; // const
+
+    today.print();  // ok: const object can call const member function
+
+    return 0;
+}
+```
+Note: Const member functions may be called on non-const objects, Because const member functions can be called on both const and non-const objects, if a member function does not modify the state of the object, it should be made const.
+
+## Public and private members and access specifiers
+
+Public members of a class are accessible from outside the class, while private members are only accessible from within the class. Access specifiers are used to specify the access level of class members. The three access specifiers in C++ are public, private, and protected.
+
+## Access functions
+
+An access function is a trivial public member function whose job is to retrieve or change the value of a private member variable.
+
+## Getter and setter functions
+Getters (also sometimes called accessors) are public member functions that return the value of a private member variable. Setters (also sometimes called mutators) are public member functions that set the value of a private member variable.
+
+Note: Getters are usually made const, so they can be called on both const and non-const objects. Setters should be non-const, so they can modify the data members.  
+
+## Returning data members by lvalue reference
+
+Member functions can also return data members by (const) lvalue reference. Data members have the same lifetime as the object containing them. Since member functions are always called on an object, and that object must exist in the scope of the caller, it is generally safe for a member function to return a data member by (const) lvalue reference (as the member being returned by reference will still exist in the scope of the caller when the function returns).
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Employee
+{
+	std::string m_name{};
+
+public:
+	void setName(std::string_view name) { m_name = name; }
+	const std::string& getName() const { return m_name; } //  getter returns by const reference
+};
+
+int main()
+{
+	Employee joe{}; // joe exists until end of function
+	joe.setName("Joe");
+
+	std::cout << joe.getName(); // returns joe.m_name by reference
+
+	return 0;
+}
+```
+
+Note: A member function returning a reference should return a reference of the same type as the data member being returned, to avoid unnecessary conversions. Best practice use auto deduction.
+
+ex:
+
+```cpp
+
+#include <iostream>
+#include <string>
+
+class Employee
+{
+	std::string m_name{};
+
+public:
+	void setName(std::string_view name) { m_name = name; }
+	const auto& getName() const { return m_name; } // uses `auto` to deduce return type from m_name
+};
+
+int main()
+{
+	Employee joe{}; // joe exists until end of function
+	joe.setName("Joe");
+
+	std::cout << joe.getName(); // returns joe.m_name by reference
+
+	return 0;
+}
+```
+
+## Rvalue implicit objects and return by reference
+
+An rvalue object is destroyed at the end of the full expression in which it is created. Any references to members of the rvalue object are left dangling at that point.
+
+A reference to a member of an rvalue object can only be safely used within the full expression where the rvalue object is created.
+
+ex :
+
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Employee
+{
+	std::string m_name{};
+
+public:
+	void setName(std::string_view name) { m_name = name; }
+	const std::string& getName() const { return m_name; } //  getter returns by const reference
+};
+
+// createEmployee() returns an Employee by value (which means the returned value is an rvalue)
+Employee createEmployee(std::string_view name)
+{
+	Employee e;
+	e.setName(name);
+	return e;
+}
+
+int main()
+{
+	// Case 1: okay: use returned reference to member of rvalue class object in same expression
+	std::cout << createEmployee("Frank").getName();
+
+	// Case 2: bad: save returned reference to member of rvalue class object for use later
+	const std::string& ref { createEmployee("Garbo").getName() }; // reference becomes dangling when return value of createEmployee() is destroyed
+	std::cout << ref; // undefined behavior
+
+	// Case 3: okay: copy referenced value to local variable for use later
+	std::string val { createEmployee("Hans").getName() }; // makes copy of referenced member
+	std::cout << val; // okay: val is independent of referenced member
+
+	return 0;
+}
+```
+When createEmployee() is called, it will return an Employee object by value. This returned Employee object is an rvalue that will exist until the end of the full expression containing the call to createEmployee(). When that rvalue object is destroyed, any references to members of that object will become dangling.
+
+Note: Do not return non-const references to private data members , Because a reference acts just like the object being referenced, a member function that returns a non-const reference provides direct access to that member (even if the member is private).
+
+ex: 
+```cpp
+#include <iostream>
+
+class Foo
+{
+private:
+    int m_value{ 4 }; // private member
+
+public:
+    int& value() { return m_value; } // returns a non-const reference (don't do this)
+};
+
+int main()
+{
+    Foo f{};                // f.m_value is initialized to default value 4
+    f.value() = 5;          // The equivalent of m_value = 5
+    std::cout << f.value(); // prints 5
+
+    return 0;
+}
+```
+
+Note : Const member functions can’t return non-const references to data members, Because a const member function can be called on a const object, if a const member function were allowed to return a non-const reference to a data member, then it would be possible to modify the state of a const object through that reference, which would violate the constness of the object.
+
+## The benefits of data hiding (encapsulation)
+
+Interface : The interface of a class type (also called a class interface) defines how a user of the class type will interact with objects of the class type. The interface of a class type is defined by the public members of the class type. By making data members private and providing public member functions to access and modify those data members, we can control how users interact with the data and ensure that it is used in a way that is consistent with the intended design of the class. This can help prevent misuse of the class and make it easier to maintain and update the class in the future.
+
+An interface that is well-designed and easy to use can make it easier for users to understand how to use the class and can help prevent errors and bugs in their code. By hiding the implementation details of the class and providing a clear and concise interface, we can make it easier for users to work with the class and can help ensure that they use it correctly.
+
+Implementation : The implementation of a class type consists of the code that actually makes the class behave as intended. This includes both the member variables that store data, and the bodies of the member functions that contain the program logic and manipulate the member variables.
+
+Data hiding: In programming, data hiding (also called information hiding or data abstraction) is a technique used to enforce the separation of interface and implementation by hiding (making inaccessible) the implementation of a program-defined data type from users.
+
+Implementing data hiding in a C++ class type is simple. First, we ensure the data members of the class type are private (so that the user can not directly access them). Next, we ensure the member functions are public, so that the user can call them.
+
+Advantages of data hiding:
+1. Data hiding allows us to maintain invariants.
+
+```cpp
+#include <iostream>
+#include <string>
+
+struct Employee // members are public by default
+{
+    std::string name{ "John" };
+    char firstInitial{ 'J' }; // should match first initial of name
+
+    void print() const
+    {
+        std::cout << "Employee " << name << " has first initial " << firstInitial << '\n';
+    }
+};
+
+int main()
+{
+    Employee e{}; // defaults to "John" and 'J'
+    e.print();
+
+    e.name = "Mark"; // change employee's name to "Mark"
+    e.print(); // prints wrong initial
+
+    return 0;
+}
+```
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Employee // members are private by default
+{
+    std::string m_name{};
+    char m_firstInitial{};
+
+public:
+    void setName(std::string_view name)
+    {
+        m_name = name;
+        m_firstInitial = name.front(); // use std::string::front() to get first letter of `name`
+    }
+
+    void print() const
+    {
+        std::cout << "Employee " << m_name << " has first initial " << m_firstInitial << '\n';
+    }
+};
+
+int main()
+{
+    Employee e{};
+    e.setName("John");
+    e.print();
+
+    e.setName("Mark");
+    e.print();
+
+    return 0;
+}
+```
+
+Because the name member is public, the code in main() is able to set e.name to "Mark", and the firstInitial member is not updated. Our invariant is broken, and our second call to print() doesn’t work as expected.
+
+
+2. Data hiding makes it possible to change implementation details without breaking existing programs
+
+```cpp
+#include <iostream>
+
+struct Something
+{
+    int value1 {};
+    int value2 {};
+    int value3 {};
+};
+
+int main()
+{
+    Something something;
+    something.value1 = 5;
+    std::cout << something.value1 << '\n';
+}
+```
+
+While this program works fine, what would happen if we decided to change the implementation details of the class, like this?
+
+```cpp
+#include <iostream>
+
+struct Something
+{
+    int value[3] {}; // uses an array of 3 values
+};
+
+int main()
+{
+    Something something;
+    something.value1 = 5;
+    std::cout << something.value1 << '\n';
+}
+```
+
+Now, it will no longer compile, because the implementation details of the class have changed, and the code in main() is directly accessing the data members of the class. If we had used data hiding and provided public member functions to access and modify the data, we could have changed the implementation details without breaking existing programs that use the class.
+
+best solution :
+
+![alt text](image-9.png)
+
+3. Data hiding allows us to do better error detection (and handling)
+
+```cpp
+
+#include <iostream>
+#include <string>
+
+class Employee
+{
+    std::string m_name{ "John" };
+
+public:
+    void setName(std::string_view name)
+    {
+        m_name = name;
+    }
+
+    // use std::string::front() to get first letter of `m_name`
+    char firstInitial() const { return m_name.front(); }
+
+    void print() const
+    {
+        std::cout << "Employee " << m_name << " has first initial " << firstInitial() << '\n';
+    }
+};
+
+int main()
+{
+    Employee e{}; // defaults to "John"
+    e.setName("Mark");
+    e.print();
+
+    return 0;
+}
+```
+
+## Constructor
+
+A constructor is a special member function of a class that is automatically called when an object of the class is created. The purpose of a constructor is to initialize the data members of the class and to set up any necessary resources for the object. A constructor has the same name as the class and does not have a return type (not even void).
+
+### Working of constructor:
+
+* They typically perform initialization of any member variables (via a member initialization list)
+* They may perform other setup functions (via statements in the body of the constructor). This might include things such as error checking the initialization values, opening a file or database, etc…
+
+Note: A constructor needs to be able to initialize the object being constructed -- therefore, a constructor must not be const.
+
+### Difference between constructor and setter function:
+
+Constructors are designed to initialize an entire object at the point of instantiation. Setters are designed to assign a value to a single member of an existing object.
+
+## Constructor member initializer lists
+
+Use Member initialization via a member initialization list
+
+```cpp
+#include <iostream>
+
+class Foo
+{
+private:
+    int m_x {};
+    int m_y {};
+
+public:
+    Foo(int x, int y)
+        : m_x { x }, m_y { y } // here's our member initialization list
+    {
+        std::cout << "Foo(" << x << ", " << y << ") constructed\n";
+    }
+
+    void print() const
+    {
+        std::cout << "Foo(" << m_x << ", " << m_y << ")\n";
+    }
+};
+
+int main()
+{
+    Foo foo{ 6, 7 };
+    foo.print();
+
+    return 0;
+}
+```
+Note: The member initializer list is defined after the constructor parameters. It begins with a colon (:), and then lists each member to initialize along with the initialization value for that variable, separated by a comma. You must use a direct form of initialization here (preferably using braces, but parentheses works as well) -- using copy initialization (with an equals) does not work here.
+
+### Member initializer list formatting
+
+![alt text](image-14.png)
+
+### Member initialization order
+
+![alt text](image-15.png)
+
+Note: To help prevent such errors, members in the member initializer list should be listed in the order in which they are defined in the class. Some compilers will issue a warning if members are initialized out of order
+
+Note: constant or reference data members can only be initialsed using list initlization else if we use assignment for intilizing members variable result into compile time error
+
+ex: 
+
+![alt text](image-16.png)
+
+![alt text](image-17.png)
+
