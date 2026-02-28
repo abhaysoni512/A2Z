@@ -2,7 +2,7 @@ Source : learncpp.com
 
 # Chapter 7 
 
-## 7.2:  User-defined namespaces and the scope resolution operator
+## User-defined namespaces and the scope resolution operator
 
 * The syntax for a namespace is as follows:
     namespace NamespaceIdentifier
@@ -18,7 +18,7 @@ ConsoleApplication1.obj : error LNK2019: unresolved external symbol "int __cdecl
 - In this case, the compiler was satisfied (by our forward declaration), but the linker could not find a definition for doSomething in the global namespace. This is because both of our versions of doSomething are no longer in the global namespace! They are now in the scope of their respective namespaces!
 
 
-## 7.3 : Local variables 
+## Local variables 
 scope determines where an identifier can be accessed within the source code. When an identifier can not be accessed, we say it is out of scope. Scope is a compile-time property, and trying to use an identifier when it is out of scope will result in a compile error.
 
 * Linkage 
@@ -41,7 +41,7 @@ An identifier’s linkage determines whether a declaration of that same identifi
 
 * Global variables have external linkage by default. This means that a declaration of the same identifier in a different scope refers to the same object.
 
-## 7.6 : Internal linkage :
+## Internal linkage :
 An identifier with internal linkage can be seen and used within a single translation unit, but it is not accessible from other translation units. This means that if two source files have identically named identifiers with internal linkage, those identifiers will be treated as independent (and do not result in an ODR violation for having duplicate definitions).
 
 * Gloabal variables can be given internal linkage by using the static keyword : Global variables with internal linkage are sometimes called internal variables.
@@ -52,7 +52,7 @@ An identifier with internal linkage can be seen and used within a single transla
 
     ![alt text](image-2.png)
 
-## 7.7 : External linkage and variable forward declarations
+## External linkage and variable forward declarations
 
 An identifier with external linkage can be seen and used both from the file in which it is defined, and from other code files (via a forward declaration).
 
@@ -75,7 +75,7 @@ An identifier with external linkage can be seen and used both from the file in w
     example :
     ![alt text](image-3.png)
 
-## 7.9 — Inline functions and variables:
+## Inline functions and variables:
 
  Inline expansion is a process where a function call is replaced by the code from the called function’s definition. This can improve performance by eliminating the overhead of a function call, especially for small functions that are called frequently.
 
@@ -98,7 +98,8 @@ A qualified name is a name that includes an associated scope. Most often, names 
     std::cout // identifier cout is qualified by namespace std
     ::foo // identifier foo is qualified by the global namespace
 
-### Using-directives : A using-directive brings all the names from a namespace into the current scope. For example:
+### Using-directives 
+A using-directive brings all the names from a namespace into the current scope. For example:
     using namespace MyNamespace;
 
     Problems with using-directives : Using-directives can lead to name conflicts if two namespaces contain identically named identifiers. For example:
@@ -143,12 +144,12 @@ Why conversions are needed?
 
 The value of an object is stored as a sequence of bits, and the data type of the object tells the compiler how to interpret those bits into meaningful values.
 
-## 10.4 -  Narrowing conversions :
+## Narrowing conversions :
 
 In C++, a narrowing conversion is a potentially unsafe numeric conversion where the destination type may not be able to hold all the values of the source type.
 For example, converting a floating-point number to an integer can result in loss of the fractional part, and converting a larger integer type to a smaller integer type can result in overflow.
 
-## 10.6 — Explicit type conversion (casting) and static_cast
+## Explicit type conversion (casting) and static_cast
 
 Type Casting operators in C++:
 1. static_cast
@@ -193,7 +194,7 @@ Note: C-style casts are generally considered less safe than C++ style casts beca
         // explicit conversion from int to char, so that a char is assigned to variable ch
         char ch { static_cast<char>(i) };
 
-## 10.8 :- Type deduction for objects using the auto keyword
+## Type deduction for objects using the auto keyword
 
 Type deduction is the process by which the compiler automatically deduces the type of a variable from its initializer. The auto keyword is used to declare a variable with an automatically deduced type.
 
@@ -210,7 +211,7 @@ Type deduction is the process by which the compiler automatically deduces the ty
         const int a { 5 }; // a has type const int
         auto b { a };      // b has type int (const dropped)
 
-## 10.9 : Type deduction for functions 
+## Type deduction for functions 
 
 For C++ 14 : 
     auto add(int a, int b)
@@ -282,7 +283,7 @@ A function can be deleted by using the delete specifier in its declaration. This
         return 0;
     }
 
-## 11.5 — Default arguments
+## Default arguments
 
 ![alt text](image-4.png)
 
@@ -304,7 +305,7 @@ Note : The default argument must also be declared in the translation unit before
 
 Note: Best practice is to place default arguments in function declarations (e.g., in header files), rather than in function definitions (e.g., in source files). This helps ensure that the default arguments are visible to all translation units that include the header file.
 
-## 11.6 — Function templates
+## Function templates
 
 A function template is a function-like definition that is used to generate one or more overloaded functions, each with a different set of actual types. This is what will allow us to create functions that can work with many different types. 
 
@@ -314,7 +315,10 @@ C++ supports three types of templates parameters:
 * Non-type template parameters (where the template parameter represents a constexpr value).
 * Template template parameters (where the template parameter represents a template).
 
-ex. #include <iostream>
+```cpp
+ex. 
+
+#include <iostream>
 
     template <typename T>
     T max(T x, T y)
@@ -353,13 +357,14 @@ ex. #include <iostream>
 
         return 0;
     }
+```
     
 * Functions templates with non-type template parameters : Functions containing template parameters and non template parameters.
 * Note : Beaware function templates with modifiable static local variables can lead to unexpected behavior, as all instantiations of the function template will share the same static variable. This can cause unintended side effects if the function is called with different template arguments.
 
 ![alt text](image-6.png)
 
-## 11.8 - Function templates with multiple template types
+## Function templates with multiple template types
 
 ex: #include <iostream>
 
@@ -398,7 +403,7 @@ C++20 introduces a new use of the auto keyword: When the auto keyword is used as
         return (x < y) ? y : x;
     }
 
-## 11.9 - Non-type template parameters
+## Non-type template parameters
 A non-type template parameter is a template parameter with a fixed type that serves as a placeholder for a constexpr value passed in as a template argument.
 
 A non-type template parameter can be any of the following types:
@@ -413,6 +418,7 @@ A non-type template parameter can be any of the following types:
 * A literal class type (since C++20)
 
 ex. 
+```cpp
 #include <bitset>
 
 int main()
@@ -421,9 +427,9 @@ int main()
 
     return 0;
 }
-
+```
 Defining our own non-type template parameters :-
-
+```cpp
 #include <iostream>
 
 template <int N> // declare a non-type template parameter of type int named N
@@ -438,9 +444,9 @@ int main()
 
     return 0;
 }
-
+```
 11.10 — Using function templates in multiple files
-
+```cpp
 main.cpp:
 
     #include <iostream>
@@ -463,7 +469,7 @@ add.cpp:
     {
         return x + 1;
     }
-
+```
     Note : If addOne were a non-template function, this program would work fine: In main.cpp, the compiler would be satisfied with the forward declaration of addOne, and the linker would connect the call to addOne() in main.cpp to the function definition in add.cpp.
 
     We can fix it by adding function definition in the header file and including it in both source files. 
