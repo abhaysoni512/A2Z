@@ -2,15 +2,15 @@ Source : learncpp.com
 
 # Chapter 7 
 
-7.2:  User-defined namespaces and the scope resolution operator
+## 7.2:  User-defined namespaces and the scope resolution operator
 
-*The syntax for a namespace is as follows:
+* The syntax for a namespace is as follows:
     namespace NamespaceIdentifier
     {
         // content of namespace here
     }
 
-*Guidlines for naming namespaces:
+* Guidlines for naming namespaces:
 -It is convention to name program-defined types starting with a capital letter.
 
 * Error : ![alt text](image.png)
@@ -18,10 +18,13 @@ ConsoleApplication1.obj : error LNK2019: unresolved external symbol "int __cdecl
 - In this case, the compiler was satisfied (by our forward declaration), but the linker could not find a definition for doSomething in the global namespace. This is because both of our versions of doSomething are no longer in the global namespace! They are now in the scope of their respective namespaces!
 
 
-7.3 : Local variables :- scope determines where an identifier can be accessed within the source code. When an identifier can not be accessed, we say it is out of scope. Scope is a compile-time property, and trying to use an identifier when it is out of scope will result in a compile error.
+## 7.3 : Local variables 
+scope determines where an identifier can be accessed within the source code. When an identifier can not be accessed, we say it is out of scope. Scope is a compile-time property, and trying to use an identifier when it is out of scope will result in a compile error.
 
-* Linkage : An identifier’s linkage determines whether a declaration of that same identifier in a different scope refers to the same object (or function). Local variables have no linkage. Each declaration of an identifier with no linkage refers to a unique object or function.
+* Linkage 
+An identifier’s linkage determines whether a declaration of that same identifier in a different scope refers to the same object (or function). Local variables have no linkage. Each declaration of an identifier with no linkage refers to a unique object or function.
 
+```cpp
     int main()
     {
         int x { 2 }; // local variable, no linkage
@@ -32,13 +35,13 @@ ConsoleApplication1.obj : error LNK2019: unresolved external symbol "int __cdecl
 
         return 0;
     }
-
+```
 
 * Global variables have static duration : Global variables are created when the program starts (before main() begins execution), and destroyed when it ends. This is called static duration. Variables with static duration are sometimes called static variables.
 
 * Global variables have external linkage by default. This means that a declaration of the same identifier in a different scope refers to the same object.
 
-7.6 : Internal linkage :
+## 7.6 : Internal linkage :
 An identifier with internal linkage can be seen and used within a single translation unit, but it is not accessible from other translation units. This means that if two source files have identically named identifiers with internal linkage, those identifiers will be treated as independent (and do not result in an ODR violation for having duplicate definitions).
 
 * Gloabal variables can be given internal linkage by using the static keyword : Global variables with internal linkage are sometimes called internal variables.
@@ -49,7 +52,7 @@ An identifier with internal linkage can be seen and used within a single transla
 
     ![alt text](image-2.png)
 
-7.7 : External linkage and variable forward declarations
+## 7.7 : External linkage and variable forward declarations
 
 An identifier with external linkage can be seen and used both from the file in which it is defined, and from other code files (via a forward declaration).
 
@@ -72,33 +75,35 @@ An identifier with external linkage can be seen and used both from the file in w
     example :
     ![alt text](image-3.png)
 
-7.9 — Inline functions and variables:
+## 7.9 — Inline functions and variables:
 
  Inline expansion is a process where a function call is replaced by the code from the called function’s definition. This can improve performance by eliminating the overhead of a function call, especially for small functions that are called frequently.
 
  Note: inline expansion has its own potential cost: if the body of the function being expanded takes more instructions than the function call being replaced, then each inline expansion will cause the executable to grow larger. Larger executables tend to be slower (due to not fitting as well in memory caches).
 
-* Modern inline functions and variables :
+### Modern inline functions and variables :
 
  In modern C++, the term inline has evolved to mean “multiple definitions are allowed”. Thus, an inline function is one that is allowed to be defined in multiple translation units (without violating the ODR). This is particularly useful for functions defined in header files, which are typically included in multiple source files.
 
  Inline functions have two primary requirements:
  - The compiler needs to be able to see the full definition of an inline function in each translation unit where the function is used.
 
- * inline variables : Similar to inline functions, inline variables are allowed to be defined in multiple translation units without violating the ODR. This is useful for defining global variables in header files.
+### inline variables : 
+Similar to inline functions, inline variables are allowed to be defined in multiple translation units without violating the ODR. This is useful for defining global variables in header files.
 
 
-* Qualified and unqualified names :
+## Qualified and unqualified names :
 
 A qualified name is a name that includes an associated scope. Most often, names are qualified with a namespace using the scope resolution operator (::). For example:
     std::cout // identifier cout is qualified by namespace std
     ::foo // identifier foo is qualified by the global namespace
 
-* Using-directives : A using-directive brings all the names from a namespace into the current scope. For example:
+### Using-directives : A using-directive brings all the names from a namespace into the current scope. For example:
     using namespace MyNamespace;
 
     Problems with using-directives : Using-directives can lead to name conflicts if two namespaces contain identically named identifiers. For example:
-
+    ex:
+```cpp
     #include <iostream>
 
     namespace A
@@ -120,11 +125,13 @@ A qualified name is a name that includes an associated scope. Most often, names 
 
         return 0;
     }
+```
 
 
-  * Unnamed namespaces : An unnamed namespace is a namespace that does not have a name. Identifiers declared in an unnamed namespace have internal linkage by default. This means that they can only be accessed within the same translation unit. 
+## Unnamed namespaces : 
+An unnamed namespace is a namespace that does not have a name. Identifiers declared in an unnamed namespace have internal linkage by default. This means that they can only be accessed within the same translation unit. 
 
-  Difference between unnamed namespaces and static variables/functions : Both unnamed namespaces and static variables/functions provide internal linkage, but they do so in different ways. Unnamed namespaces group related identifiers together, while static variables/functions are declared individually.
+Difference between unnamed namespaces and static variables/functions : Both unnamed namespaces and static variables/functions provide internal linkage, but they do so in different ways. Unnamed namespaces group related identifiers together, while static variables/functions are declared individually.
 
 
 # Chapter 10 : Type Conversion, Type Aliases, and Type Deduction :
@@ -572,10 +579,9 @@ int main()
     const int x { 5 }; // x is now const
     int* ptr { &x };   // compile error: cannot convert from const int* to int* or error: cannot initialize a variable of type 'int *' with an rvalue of type 'const int *'
 
-
     return 0;
 }
-
+```
 * Pointer to const : A pointer to const is a pointer that points to a const object. This means that we cannot use the pointer to modify the value of the object it points to, but we can change the pointer itself to point to a different object.
 
 ```cpp
@@ -601,7 +607,7 @@ int main()
 
     return 0;
 }
-
+```
 Note: Just like with references, we can also have pointers to const that point to modifiable objects. This is allowed because the pointer itself is not const, but rather it points to a const value. However, since the pointer points to a const value, we cannot use it to modify the value of the object through the pointer.
 
 ```cpp
@@ -1953,4 +1959,10 @@ Also, using static_cast can also be used to perform an explicit conversion:
 print(static_cast<Dollars>(5)); // ok: static_cast performs an explicit conversion to Dollars, which is then passed to print()
 
 ```
+
+# Chapter 15: More on Classes
+
+## The hidden “this” pointer and member function chaining
+
+
 
