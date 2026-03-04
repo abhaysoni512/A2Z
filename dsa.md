@@ -51,3 +51,55 @@ Note: Anything inside the loop is exected n times, so we can ignore the constant
 for function:
 
 ![alt text](image-13.png)
+
+# Recursion
+
+## Static variable
+
+A static variable is a variable that retains its value between function calls. It is initialized only once and its value persists throughout the program's execution. Static variables are typically used to maintain state information across multiple function calls. Initilised static variable are stored in data segment of memory and uninitialized static variable are stored in bss segment of memory.
+
+### Example of static variable in Recursion:
+
+![alt text](image-27.png)
+
+1. Tail Recursion: A tail recursion is a special case of recursion where the recursive call is the last operation performed in the function. In tail recursion, there are no further computations or operations after the recursive call. Tail recursion can be optimized by the compiler into iterative code, which can improve performance and reduce memory usage.
+
+Left side is non-tail recursion and right side is tail recursion. ex.
+
+![alt text](image-28.png)
+
+Note: Tail recursion can be optimized by the compiler into iterative code, which can improve performance and reduce memory usage. See space complexity of tail recursion and loop in img 29.
+
+![alt text](image-29.png)
+
+2. Head Recursion: A head recursion is a special case of recursion where the recursive call is the first operation performed in the function. In head recursion, there are further computations or operations after the recursive call. Head recursion cannot be optimized by the compiler into iterative code, and it may lead to increased memory usage due to multiple function calls.
+
+
+# Array
+
+## Method of Initialization
+
+![alt text](image-30.png)
+
+## Array ADT
+
+An array is a data structure that stores a fixed number of values of the same type. It is a collection of elements that are stored in contiguous memory locations. The elements in an array can be accessed using an index, which starts from 0.
+
+Data:
+1. Array Space
+2. Array Size
+3. Array length
+
+Operations:
+1. Display(): It is the operation of displaying the elements of an array.
+2. Add(x): It is the operation of adding an element to the end of the array.
+3. Insert(x, index): It is the operation of inserting an element at a specific index in the array.
+4. Delete(index): It is the operation of deleting an element from a specific index in the array.
+5. Search(x): It is the operation of searching for an element in the array and returning its index if found, or -1 if not found.
+6. Update(x, index): It is the operation of updating an element at a specific index in the array with a new value.
+7. Get(index): It is the operation of retrieving the value of an element at a specific index in the array.
+8. Set(x, index): It is the operation of setting the value of an element at a specific index in the array to a new value.
+9. Max(): It is the operation of finding the maximum element in the array.
+10. Min(): It is the operation of finding the minimum element in the array.
+11. Reverse(): It is the operation of reversing the order of elements in the array.
+12. Shift(): It is the operation of shifting all elements in the array to the left or right by a specified number of positions.

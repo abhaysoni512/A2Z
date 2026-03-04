@@ -137,10 +137,10 @@ Difference between unnamed namespaces and static variables/functions : Both unna
 
 # Chapter 10 : Type Conversion, Type Aliases, and Type Deduction :
 
-What is type conversion?
+## What is type conversion?
 Type conversion is the process of converting a value from one data type to another. This can happen either implicitly (automatically by the compiler) or explicitly (manually by the programmer).
 
-Why conversions are needed?
+### Why conversions are needed?
 
 The value of an object is stored as a sequence of bits, and the data type of the object tells the compiler how to interpret those bits into meaningful values.
 
@@ -1970,5 +1970,240 @@ print(static_cast<Dollars>(5)); // ok: static_cast performs an explicit conversi
 
 ## The hidden “this” pointer and member function chaining
 
+this is a const pointer that holds the address of the current implicit object.
 
+### How is this set?
+
+![alt text](image-21.png)
+
+When we call simple.setID(2), the compiler actually calls Simple::setID(&simple, 2), and simple is passed by address to the function.
+The function has a hidden parameter named this which receives the address of simple.
+Member variables inside setID() are prefixed with this->, which points to simple. So when the compiler evaluates this->m_id, it’s actually resolving to simple.m_id.
+
+### Returning *this
+
+Second, it can sometimes be useful to have a member function return the implicit object as a return value. The primary reason to do this is to allow member functions to be “chained” together, so several member functions can be called on the same object in a single expression! This is called function chaining (or method chaining).
+
+![alt text](image-22.png)
+
+## Resetting a class back to default state
+
+![alt text](image-23.png)
+
+## Separating class declarations and definitions into header and source files
+
+![alt text](image-24.png)
+
+Note: Member function defined inside the class definition are implicitly inline, so they can be defined in a header file without violating the One Definition Rule (ODR). However, if we define member functions outside the class definition, we should put their definitions in a source file (.cpp) to avoid multiple definitions when including the header in multiple translation units. Also, if we are defining a member function in a header file, we should mark it as inline to avoid multiple definition errors.
+
+![alt text](image-25.png)
+
+### why not put everything in a header file?
+
+First, as mentioned above, defining members inside the class definition clutters up your class definition.
+
+Second, if you change any of the code in the header, then you’ll need to recompile every file that includes that header. This can have a ripple effect, where one minor change causes the entire program to need to recompile. The cost of recompilation can vary significantly: a small project may only take a minute or less to build, whereas a large commercial project can take hours.
+
+Conversely, if you change the code in a .cpp file, only that .cpp file needs to be recompiled. Therefore, given the choice, it’s generally better to put non-trivial code in a .cpp file when you can.
+
+## Nested types (member types)
+
+we’ve seen class types with two different kinds of members: data members and member functions. Class types support another kind of member: nested types (also called member types). To create a nested type, you simply define the type inside the class, under the appropriate access specifier.
+
+```cpp
+#include <iostream>
+
+class Fruit{
+public: 
+    enum class Type{
+        apple,
+        banana,
+        cherry,
+    };
+
+private:
+    Type m_type{};
+    int percentageEaten{};
+public:
+    explicit Fruit(Type type) : m_type{type} 
+    {
+    }
+
+    Type getType() {return m_type; }
+    int getPercentageEaten() { return percentageEaten; }
+
+    bool isCherry() { return m_type == Type::cherry; }
+};
+
+int main(){
+    Fruit apple {Fruit::Type::apple};
+    if(apple.getType() == Fruit::Type::apple){
+        std::cout<<"I am apple"<<std::endl;   
+        } else{
+            std::cout<<"I am not apple"<<std::endl;   
+            
+        }
+    return 0;
+}
+```
+Note: To access a nested type from outside the class, you need to use the scope resolution operator (::) to specify the class name followed by the nested type name. For example, if you have a nested enum called Type inside a class called Fruit, you would access it as Fruit::Type.
+
+## Nested classes and access to outer class members
+
+In C++, a nested class does not have access to the this pointer of the outer (containing) class, so nested classes can not directly access the members of the outer class. This is because a nested class can be instantiated independently of the outer class (and in such a case, there would be no outer class members to access!)
+
+However, because nested classes are members of the outer class, they can access any private members of the outer class that are in scope.
+
+ex:
+
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Employee
+{
+public:
+    using ID = int; // type alias for employee ID
+
+    class Printer
+    {
+    public:
+        void printEmployee(const Employee& e) const
+        {
+            // Printer can't access Employee's `this` pointer
+            // so we can't print m_name and m_id directly
+            // Instead, we have to pass in an Employee object to use
+            // Because Printer is a member of Employee,
+            // we can access private members e.m_name and e.m_id directly
+            std::cout << "Employee " << e.m_name << " has ID " << e.m_id << '\n';
+        }
+    };
+private:
+    std::string m_name{};
+    ID m_id{};
+public:
+    Employee(std::string_view name, ID id)
+        : m_name{ name }
+        , m_id{ id }
+    {
+    }
+};
+
+int main()
+{
+    Employee e{ "John", 123 };
+    Employee::Printer printer;
+    printer.printEmployee(e);
+
+    return 0;
+}
+```
+
+Note: Nested types and forward declarations 
+
+![alt text](image-26.png)
+
+However, a nested type cannot be forward declared prior to the definition of the enclosing class. This is because the nested type is not in scope until the definition of the enclosing class is complete. Therefore, if you try to forward declare a nested type before the enclosing class is defined, you will get a compile error.
+
+## Introduction to Destructors
+
+Classes have another type of special member function that is called automatically when an object of a non-aggregate class type is destroyed. Destructors are designed to allow a class to do any necessary clean up before an object of the class is destroyed.
+
+## Class templates with member functions
+
+Type template parameters defined as part of a class template parameter declaration can be used both as the type of data members and as the type of member function parameters.
+
+```cpp
+
+#include <ios>       // for std::boolalpha
+#include <iostream>
+
+template <typename T>
+class Pair
+{
+private:
+    T m_first{};
+    T m_second{};
+public:
+    Pair(const T& first, const T& second)
+     : m_first{first}
+     , m_second{second}
+     {
+     }
+
+    bool isEqual(const Pair<T>& pair);
+};
+
+// When we define a member function outside the class definition,
+// we need to resupply a template parameter declaration
+template <typename T>
+bool Pair<T>::isEqual(const Pair<T>& pair)
+{
+    return (m_first == pair.m_first) && (m_second == pair.m_second);
+}
+
+int main()
+{
+    Pair p1{ 5, 6 }; // uses CTAD to infer type Pair<int>
+    std::cout << std::boolalpha << "isEqual(5, 6): " << p1.isEqual( Pair{5, 6} ) << '\n';
+    std::cout << std::boolalpha << "isEqual(5, 7): " << p1.isEqual( Pair{5, 7} ) << '\n';
+
+    return 0;
+}
+```
+
+![alt text](image-31.png)
+
+Note: ![alt text](image-32.png)
+
+## Static member variables
+
+Static member variables are shared by all objects of the class. This means that there is only one instance of the static member variable, and all objects of the class share that instance. Static member variables are useful for storing data that is common to all objects of the class, such as a count of how many objects have been created.
+ex.
+
+```cpp
+#include <iostream>
+
+struct Something
+{
+    static int s_value; // declare s_value as static (initializer moved below)
+};
+
+int Something::s_value{ 1 }; // define and initialize s_value to 1 (we'll discuss this section below)
+
+int main()
+{
+    Something first{};
+    Something second{};
+
+    std::cout << first.s_value << '\n'; // prints 1
+    std::cout << second.s_value << '\n'; // also prints 1, because s_value is shared by all objects of the class
+    std::cout << Something::s_value << '\n'; // also prints 1, without needing an object of the class
+    return 0;
+}
+```
+
+Note: Static members variables are global variables that live inside the scope region of the class.
+
+Note: For non-template classes, if the class is defined in a header (.h) file, the static member definition is usually placed in the associated code file for the class (e.g. Something.cpp). Alternatively, the member can also be defined as inline and placed below the class definition in the header (this is useful for header-only libraries). If the class is defined in a source (.cpp) file, the static member definition is usually placed directly underneath the class. Do not put the static member definition in a header file (much like a global variable, if that header file gets included more than once, you’ll end up with multiple definitions, which will cause a linker error).
+
+
+### Initialization of static member variables inside the class definition
+
+![alt text](image-33.png)
+
+* Why Can't Non-Const Static Be Initialized Inside?
+Because before C++17:
+    * Only const static integral members were allowed inline initialization.
+    * Non-const static members must be defined outside to avoid multiple definitions.
+
+* C++ 17 features: inline static data members
+
+* why we need to define static members inside the class definition?
+    * To allow inline initialization of static members, which can simplify code and avoid linker errors from multiple definitions.
+    ![alt text](image-34.png)
+
+Note: Why non static members cannot be initialized inside the class definition?
+![alt text](image-35.png)
 
