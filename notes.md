@@ -2207,3 +2207,172 @@ Because before C++17:
 Note: Why non static members cannot be initialized inside the class definition?
 ![alt text](image-35.png)
 
+## Static member functions
+
+![alt text](image-36.png)
+
+Note: Static member functions can only access static member variables and other static member functions. They cannot access non-static members because they do not have a this pointer to refer to a specific instance of the class. 
+
+Note: As of now on cpp, there is no static constructors , so  in order to initialize static member variables, One way that works with all variables, static or not, is to use a function to create an object, fill it with data, and return it to the caller. This returned value can be copied into the object being initialized.
+
+![alt text](image-37.png)
+
+## Friend non-member functions
+
+Inside the body of a class, a friend declaration (using the friend keyword) can be used to tell the compiler that some other class or function is now a friend. In C++, a friend is a class or function (member or non-member) that has been granted full access to the private and protected members of another class. In this way, a class can selectively give other classes or functions full access to their members without impacting anything else.
+
+Note: The friend declaration is not affected by access controls, so it does not matter where within the class body it is placed.
+
+### Friend non-member functions
+
+A friend function is a function (member or non-member) that can access the private and protected members of a class as though it were a member of that class. In all other regards, the friend function is a normal function.
+
+ex. 
+
+```cpp
+#include <iostream>
+
+class Accumulator
+{
+private:
+    int m_value { 0 };
+
+public:
+    void add(int value) { m_value += value; }
+
+    // Here is the friend declaration that makes non-member function void print(const Accumulator& accumulator) a friend of Accumulator
+    friend void print(const Accumulator& accumulator);
+};
+
+void print(const Accumulator& accumulator)
+{
+    // Because print() is a friend of Accumulator
+    // it can access the private members of Accumulator
+    std::cout << accumulator.m_value;
+}
+
+int main()
+{
+    Accumulator acc{};
+    acc.add(5); // add 5 to the accumulator
+
+    print(acc); // call the print() non-member function
+
+    return 0;
+}
+```
+
+Here, In this example, we’ve declared a non-member function named print() that takes an object of class Accumulator. Because print() is not a member of the Accumulator class, it would normally not be able to access private member m_value. However, the Accumulator class has a friend declaration making print(const Accumulator& accumulator) a friend, this is now allowed.
+
+Note: print() is a non-member function (and thus does not have an implicit object), we must explicitly pass an Accumulator object to print() to work with.
+
+Note: 
+![alt text](image-38.png)
+
+![alt text](image-39.png)
+Above, is one of reason to use friend functions, another we will cover while studing operator overloading here we will get to know passing objects expclitely to a non-member function can be more intuitive than using member functions for certain operations, especially when the operation involves multiple objects of the same class. For example, when we want to compare two objects for equality, it can be more natural to write a non-member function that takes two objects as parameters rather than a member function that compares the current object with another object passed as an argument. This can lead to clearer and more readable code.
+
+## Friend classes and friend member functions
+
+A friend class is a class that can access the private and protected members of another class.
+
+ex.
+
+```cpp
+#include <iostream>
+
+class Storage
+{
+private:
+    int m_nValue {};
+    double m_dValue {};
+public:
+    Storage(int nValue, double dValue)
+       : m_nValue { nValue }, m_dValue { dValue }
+    { }
+
+    // Make the Display class a friend of Storage
+    friend class Display;
+};
+
+class Display
+{
+private:
+    bool m_displayIntFirst {};
+
+public:
+    Display(bool displayIntFirst)
+         : m_displayIntFirst { displayIntFirst }
+    {
+    }
+
+    // Because Display is a friend of Storage, Display members can access the private members of Storage
+    void displayStorage(const Storage& storage)
+    {
+        if (m_displayIntFirst)
+            std::cout << storage.m_nValue << ' ' << storage.m_dValue << '\n';
+        else // display double first
+            std::cout << storage.m_dValue << ' ' << storage.m_nValue << '\n';
+    }
+
+    void setDisplayIntFirst(bool b)
+    {
+         m_displayIntFirst = b;
+    }
+};
+
+int main()
+{
+    Storage storage { 5, 6.7 };
+    Display display { false };
+
+    display.displayStorage(storage);
+
+    display.setDisplayIntFirst(true);
+    display.displayStorage(storage);
+
+    return 0;
+}
+```
+
+Note:
+
+1. First, even though Display is a friend of Storage, Display has no access to the *this pointer of Storage objects (because *this is actually a function parameter).
+
+2. Second, friendship is not reciprocal. Just because Display is a friend of Storage does not mean Storage is also a friend of Display. If you want two classes to be friends of each other, both must declare the other as a friend.
+
+## Friend member functions
+
+This is done similarly to making a non-member function a friend, except the name of the member function is used instead.
+
+![alt text](image-40.png)
+
+However, it turns out this won’t work. In order to make a single member function a friend, the compiler has to have seen the full definition for the class of the friend member function (not just a forward declaration). Since class Storage hasn’t seen the full definition for class Display yet, the compiler will error at the point where we try to make the member function a friend.
+
+![alt text](image-41.png)
+
+## Ref-qualifiers (C++11 and later)
+
+ ![alt text](image-42.png)
+
+ To help address such issues, C++11 introduced a little known feature called a ref-qualifier that allows us to overload a member function based on whether it is being called on an lvalue or an rvalue implicit object. Using this feature, we can create two versions of getName() -- one for the case where our implicit object is an lvalue, and one for the case where our implicit object is an rvalue.
+
+ ![alt text](image-43.png)
+
+1. Recap: What is the "implicit object" (*this)?
+    Every member function has a hidden parameter: *this.
+
+    When you write joe.getName(), *this is lvalue (named object joe).
+    When you write createEmployee("Frank").getName(), the temporary Employee returned by createEmployee is an rvalue (unnamed temporary that will die at the end of the full expression).
+
+    Ref-qualifiers (& vs &&) let us write different versions of the same function depending on whether *this is an lvalue or rvalue.
+
+2. Why lvalue version is const std::string& getName() const &
+
+We return a reference (const std::string&) → zero copy, very fast.
+The function is const-qualified → *this is treated as const Employee inside the function. This is safe and necessary because:
+We want to be able to call getName() on const Employee objects.
+We do not want the getter to allow modification of the object (joe.getName() = "bad"; should not compile).
+
+3. Why rvalue version must return by value (never a reference)
+The rvalue version must return by value (std::string getName() &&) because the implicit object is a temporary that will be destroyed at the end of the full expression. If we were to return a reference to a member of that temporary, we would be returning a reference to an object that no longer exists after the function returns, which would lead to undefined behavior if the caller tries to use that reference.
