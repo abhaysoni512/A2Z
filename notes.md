@@ -41,7 +41,7 @@ An identifier with internal linkage can be seen and used within a single transla
 An identifier with external linkage can be seen and used both from the file in which it is defined, and from other code files (via a forward declaration).
 
 * Global variables with external linkage are sometimes called external variables.
-
+```cpp
     int g_x { 2 }; // non-constant globals are external by default (no need to use extern)
 
     extern const int g_y { 3 }; // const globals can be defined as extern, making them external
@@ -51,13 +51,13 @@ An identifier with external linkage can be seen and used both from the file in w
     {
         return 0;
     }
+```
+Note : const global variables have internal linkage by default. Therefore, to make a const global variable accessible from other translation units, you must explicitly declare it as extern.
 
-    Note : const global variables have internal linkage by default. Therefore, to make a const global variable accessible from other translation units, you must explicitly declare it as extern.
+Note: Variable forward declarations via the extern keyword, To use a global variable defined in another translation unit, you must provide a forward declaration for it using the extern keyword. A variable forward declaration tells the compiler about the variable's type and name, but does not create a new instance of the variable.
 
-    Note: Variable forward declarations via the extern keyword, To use a global variable defined in another translation unit, you must provide a forward declaration for it using the extern keyword. A variable forward declaration tells the compiler about the variable's type and name, but does not create a new instance of the variable.
-
-    example :
-    ![alt text](image-3.png)
+example :
+![alt text](image-3.png)
 
 ## Inline functions and variables:
 
@@ -173,35 +173,37 @@ Note: C-style casts are generally considered less safe than C++ style casts beca
 
     Use : to make narrowing conversions explicit :-
 
-        If we used list initialization, the compiler would yield an error. Workarround :- 
-        int i { 48 };
-        // explicit conversion from int to char, so that a char is assigned to variable ch
-        char ch { static_cast<char>(i) };
+    If we used list initialization, the compiler would yield an error. Workarround :- 
+    int i { 48 };
+    // explicit conversion from int to char, so that a char is assigned to variable ch
+    char ch { static_cast<char>(i) };
 
 ## Type deduction for objects using the auto keyword
 
 Type deduction is the process by which the compiler automatically deduces the type of a variable from its initializer. The auto keyword is used to declare a variable with an automatically deduced type.
 
-    auto d { 5.0 }; // 5.0 is a double literal, so d will be deduced as a double
+auto d { 5.0 }; // 5.0 is a double literal, so d will be deduced as a double
 
-    Note : Prior to C++17, auto d{ 5.0 }; would deduce d to be of type std::initializer_list<double> rather than double
-        For C++ 14 or before use copy initialization to avoid this issue:
-        auto d = 5.0; // d will be deduced as a double
-    Note:  
-        auto b {5u}; // u suffix causes b to be deduced to unsigned int 
+Note : Prior to C++17, auto d{ 5.0 }; would deduce d to be of type std::initializer_list<double> rather than double
+    For C++ 14 or before use copy initialization to avoid this issue:
+    auto d = 5.0; // d will be deduced as a double
+Note:  
+    auto b {5u}; // u suffix causes b to be deduced to unsigned int 
 
-    Note: Type deduction drops const from the deduced type
+Note: Type deduction drops const from the deduced type
 
-        const int a { 5 }; // a has type const int
-        auto b { a };      // b has type int (const dropped)
+    const int a { 5 }; // a has type const int
+    auto b { a };      // b has type int (const dropped)
 
 ## Type deduction for functions 
 
 For C++ 14 : 
+```cpp
     auto add(int a, int b)
     {
         return a + b;
     }
+```
 Note: for Type deduction to work with function parameters types , we required c++ 20.
     
 ## Downsides of using auto for function return types :
@@ -240,7 +242,7 @@ For parameters passed by value, the const qualifier is also not considered.
 ## Deleting functions
 
 A function can be deleted by using the delete specifier in its declaration. This prevents the function from being called, and any attempt to call a deleted function will result in a compile error.
-
+```cpp
     void doSomething() = delete; // delete the function doSomething
 
     We can also delete not required overloads of a function using function templates. For example, if we want to delete the overload of a function that takes a double parameter, we can do the following:
@@ -266,13 +268,13 @@ A function can be deleted by using the delete specifier in its declaration. This
 
         return 0;
     }
-
+```
 ## Default arguments
 
 ![alt text](image-4.png)
 
 note: Default arguments can not be redeclared, and must be declared before use
-
+```cpp
    #include <iostream>
 
     void print(int x, int y=4); // forward declaration
@@ -282,10 +284,11 @@ note: Default arguments can not be redeclared, and must be declared before use
         std::cout << "x: " << x << '\n';
         std::cout << "y: " << y << '\n';
     }
+```
 
 Note : The default argument must also be declared in the translation unit before it can be used:
 
-    ![alt text](image-5.png)
+![alt text](image-5.png)
 
 Note: Best practice is to place default arguments in function declarations (e.g., in header files), rather than in function definitions (e.g., in source files). This helps ensure that the default arguments are visible to all translation units that include the header file.
 
@@ -350,7 +353,9 @@ ex.
 
 ## Function templates with multiple template types
 
-ex: #include <iostream>
+ex: 
+```cpp
+#include <iostream>
 
 template <typename T>
 T max(T x, T y)
@@ -364,7 +369,7 @@ int main()
 
     return 0;
 }
-
+```
 To handle such cases, we can define a function template with multiple template parameters:
 #include <iostream>
 
@@ -373,7 +378,7 @@ template <typename T1, typename T2>
 
 ## Abbreviated function templates (C++20): 
 C++20 introduces a new use of the auto keyword: When the auto keyword is used as a parameter type in a normal function, the compiler will automatically convert the function into a function template with each auto parameter becoming an independent template type parameter. This method for creating a function template is called an abbreviated function template.
-
+```cpp
     auto max(auto x, auto y)
     {
         return (x < y) ? y : x;
@@ -386,7 +391,7 @@ C++20 introduces a new use of the auto keyword: When the auto keyword is used as
     {
         return (x < y) ? y : x;
     }
-
+```
 ## Non-type template parameters
 A non-type template parameter is a template parameter with a fixed type that serves as a placeholder for a constexpr value passed in as a template argument.
 
