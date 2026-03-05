@@ -2,22 +2,6 @@ Source : learncpp.com
 
 # Chapter 7 
 
-## User-defined namespaces and the scope resolution operator
-
-* The syntax for a namespace is as follows:
-    namespace NamespaceIdentifier
-    {
-        // content of namespace here
-    }
-
-* Guidlines for naming namespaces:
--It is convention to name program-defined types starting with a capital letter.
-
-* Error : ![alt text](image.png)
-ConsoleApplication1.obj : error LNK2019: unresolved external symbol "int __cdecl doSomething(int,int)" (?doSomething@@YAHHH@Z) referenced in function _main
-- In this case, the compiler was satisfied (by our forward declaration), but the linker could not find a definition for doSomething in the global namespace. This is because both of our versions of doSomething are no longer in the global namespace! They are now in the scope of their respective namespaces!
-
-
 ## Local variables 
 scope determines where an identifier can be accessed within the source code. When an identifier can not be accessed, we say it is out of scope. Scope is a compile-time property, and trying to use an identifier when it is out of scope will result in a compile error.
 
