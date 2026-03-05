@@ -19,7 +19,7 @@ void display(const M_Array &m){
 int main(){
     M_Array arr;
     int n,i;
-    cout<<"Enter the size of array :";
+    cout<<"Enter the size of array :\n";
     cin>>arr.size;
     arr.A = new int[arr.size];
     arr.length = 0;
