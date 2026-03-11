@@ -2365,3 +2365,173 @@ We do not want the getter to allow modification of the object (joe.getName() = "
 
 3. Why rvalue version must return by value (never a reference)
 The rvalue version must return by value (std::string getName() &&) because the implicit object is a temporary that will be destroyed at the end of the full expression. If we were to return a reference to a member of that temporary, we would be returning a reference to an object that no longer exists after the function returns, which would lead to undefined behavior if the caller tries to use that reference.
+
+# Chapter 16: Dynamic arrays: std::vector
+
+## Container
+
+A Container is an object used to store other objects and taking care of the management of the memory used by the objects it contains.
+
+Note: The elements of a container are unnamed.
+
+## Introduction to arrays
+
+An array is a collection of objects of the same type that are stored in contiguous memory locations. 
+
+C++ contains three primary array types: (C-style) arrays, the std::vector container class, and the std::array container class.
+
+the std::array container class was introduced in C++11 as a direct replacement for C-style arrays. It is more limited than std::vector, but can also be more efficient, especially for smaller arrays.
+
+## Introduction to std::vector and list constructors
+
+std::vector is one of the container classes in the C++ standard containers library that implements an array. std::vector is defined in the <vector> header as a class template, with a template type parameter that defines the type of the elements. Thus, std::vector<int> declares a std::vector whose elements are of type int.
+
+* Initializing a std::vector with a list of values
+
+```cpp
+#include <vector>
+
+int main()
+{
+	// List construction (uses list constructor)
+	std::vector<int> primes{ 2, 3, 5, 7 };          // vector containing 4 int elements with values 2, 3, 5, and 7
+	std::vector vowels { 'a', 'e', 'i', 'o', 'u' }; // vector containing 5 char elements with values 'a', 'e', 'i', 'o', and 'u'.  Uses CTAD (C++17) to deduce element type char (preferred).
+
+	return 0;
+}
+```
+
+### Subscript out of bounds
+
+When indexing an array, the index provided must select a valid element of the array. That is, for an array of length N, the subscript must be a value between 0 and N-1 (inclusive).
+
+operator[] does not do any kind of bounds checking, meaning it does not check to see whether the index is within the bounds of 0 to N-1 (inclusive). Passing an invalid index to operator[] will return in undefined behavior.
+
+### Constructing a std::vector of a specific length
+
+std::vector has a constructor explicit std::vector<T>(std::size_t) that constructs a std::vector of a specific length. It initializes the elements of the vector using value initialization, which means that for built-in types, the elements will be initialized to zero.
+
+```cpp
+std::vector<int> data( 10 ); // vector containing 10 int elements, value-initialized to 0
+```
+
+## Passing std::vector
+
+std::vector by value, an expensive copy will be made. Therefore, we typically pass std::vector by (const) reference to avoid such copies.
+
+```cpp
+#include <iostream>
+#include <vector>
+
+void passByRef(const std::vector<int>& arr) // we must explicitly specify <int> here
+{
+    std::cout << arr[0] << '\n';
+}
+
+int main()
+{
+    std::vector primes{ 2, 3, 5, 7, 11 };
+    passByRef(primes);
+
+    return 0;
+}
+```
+
+Passing a std::vector using a generic template or abbreviated function template
+
+![alt text](image-48.png)
+
+## Introduction to move semantics
+
+Move semantics is a feature introduced in C++11 that allows the resources owned by an rvalue (a temporary object) to be moved rather than copied. This can lead to significant performance improvements, especially when working with large objects or containers like std::vector.
+
+![alt text](image-49.png)
+
+std::string and std::vector are examples of classes that have move constructors and move assignment operators, which allow them to take advantage of move semantics. 
+
+ex.
+
+```cpp
+#include <iostream>
+#include <vector>
+
+std::vector<int> createVector()
+{
+    std::vector<int> vec{ 1, 2, 3, 4, 5 };
+    return vec; // move semantics will be used to avoid copying the vector
+}
+
+int main()
+{
+    std::vector<int> myVector = createVector(); // move semantics will be used to avoid copying the vector
+    for (int num : myVector)
+        std::cout << num << ' ';
+    std::cout << '\n';
+
+    return 0;
+}
+```
+
+## Range-based for loops (for-each)
+
+The range-based for statement has a syntax that looks like this:
+
+for (element_declaration : array_object)
+   statement;
+
+Note: ![alt text](image-50.png)
+
+### Range-based for loops in reverse  (C++20 and later)
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <ranges>
+#include <string>
+
+int main()
+{
+    std::vector<std::string> words{ "Hello", "World", "C++", "20" };
+
+    // Iterate over the vector in reverse using std::ranges::reverse_view
+    for (const auto& word : std::views::reverse(words))
+    {
+        std::cout << word << ' ';
+    }
+    std::cout << '\n';
+
+    return 0;
+}
+```
+
+Note: ![alt text](image-51.png)
+
+## Array indexing and length using enumerators
+
+One of the bigger documentation problems with arrays is that integer indices do not provide any information to the programmer about the meaning of the index.
+
+![alt text](image-52.png)
+
+## std::vector resizing and capacity
+
+![alt text](image-53.png)
+
+### The length vs capacity of a std::vector
+
+capacity is how many elements the std::vector has allocated storage for, and length is how many elements are currently being used. A std::vector with a capacity of 5 has allocated space for 5 elements. If the vector contains 2 elements in active use, the length (size) of the vector is 2. The 3 remaining elements have memory allocated for them, but they are not considered to be in active use. They can be used later without overflowing the vector.
+
+Note: After using resize if we are reducing number of elements. However, the capacity of the vector remains unchanged. This means that if we later add new elements to the vector, it can reuse the existing memory without needing to allocate new memory until we exceed the current capacity. It is used to avoid repeatedly allocating and deallocating memory as the vector grows and shrinks in size. 
+
+![alt text](image-54.png)
+
+Note: if we want to reduce the capacity of the vector to match its new size after resizing, we can use the shrink_to_fit() member function. This function is a non-binding request to reduce the capacity of the vector to fit its size. However, it is important to note that shrink_to_fit() does not guarantee that the capacity will be reduced, and it may not have any effect on some implementations.
+
+## Std::vector stack behavior
+
+![alt text](image-55.png)
+
+Note: ![alt text](image-56.png) , observe capacity here.
+
+## push_back() vs emplace_back() 
+
+Both push_back() and emplace_back() push an element onto the stack. If the object to be pushed already exists, push_back() and emplace_back() are equivalent, and push_back() should be preferred.
