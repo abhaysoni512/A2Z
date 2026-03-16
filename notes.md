@@ -375,6 +375,74 @@ To handle such cases, we can define a function template with multiple template p
 
 template <typename T1, typename T2>
 
+## Function templates with multiple template types and template argument deduction
+
+```cpp
+Before C++ 14
+template <typename T1, typename T2>
+auto max(T1 x, T2 y) -> decltype((x < y) ? y : x)
+{
+    return (x < y) ? y : x;
+}
+```
+
+int main(){
+    std::cout << max(2, 3.5) << '\n';  // okay: max<int, double>(int, double) is instantiated
+
+    return 0;
+}
+``` 
+After C++ 11
+```cpp
+template <typename T1, typename T2>
+auto max(T1 x, T2 y)
+{
+    return (x < y) ? y : x;
+}
+
+int main()
+{
+    std::cout << max(2, 3.5) << '\n';  // okay: max<int, double>(int, double) is instantiated
+
+    return 0;
+}
+```
+
+* decltype and decltype(auto)
+
+decltype is used to query the exact type of an expression.
+
+```cpp
+#include <iostream>
+
+int main()
+{
+    int x = 10;
+    decltype(x) y = 20;   // y has same type as x (int)
+
+    std::cout << y << std::endl;
+}
+```
+
+Note: The result depends on how the expression is written.
+```cpp
+int x = 10;
+
+decltype(x) a = x;   // int
+decltype((x)) b = x; // int&
+```
+
+decltype(auto)
+
+decltype(auto) lets the compiler deduce the type using decltype rules automatically.
+
+![alt text](image-57.png)
+
+Note: 
+![alt text](image-58.png)
+
+
+
 
 ## Abbreviated function templates (C++20): 
 C++20 introduces a new use of the auto keyword: When the auto keyword is used as a parameter type in a normal function, the compiler will automatically convert the function into a function template with each auto parameter becoming an independent template type parameter. This method for creating a function template is called an abbreviated function template.
@@ -2532,6 +2600,70 @@ Note: if we want to reduce the capacity of the vector to match its new size afte
 
 Note: ![alt text](image-56.png) , observe capacity here.
 
-## push_back() vs emplace_back() 
+### push_back() vs emplace_back() 
 
 Both push_back() and emplace_back() push an element onto the stack. If the object to be pushed already exists, push_back() and emplace_back() are equivalent, and push_back() should be preferred.
+
+However, in cases where we are creating a temporary object (of the same type as the vector’s element) for the purpose of pushing it onto the vector, emplace_back() can be more efficient:
+
+![alt text](image-60.png)
+
+### reserve() 
+
+The reserve() member function can be used to reallocate a std::vector without changing the current length.
+
+## std::vector<bool>
+
+std::vector<bool> is a specialization of std::vector that is optimized for space efficiency. Instead of storing each boolean value as a separate byte, std::vector<bool> uses a bitset-like structure to pack multiple boolean values into a single byte. This allows std::vector<bool> to use significantly less memory than a regular std::vector<bool> would.
+
+However, this optimization comes with some trade-offs. Because std::vector<bool> does not store each boolean value as a separate byte, it cannot provide direct access to individual boolean values. Instead, it provides a proxy object that allows you to read and write boolean values as if they were stored in a regular std::vector<bool>, but under the hood, it is actually manipulating bits within a byte.
+
+```cpp
+
+#include <iostream>
+#include <vector>
+
+int main()
+{
+    std::vector<bool> v { true, false, false, true, true };
+
+    for (int i : v)
+        std::cout << i << ' ';
+    std::cout << '\n';
+
+    // Change the Boolean value with index 4 to false
+    v[4] = false;
+
+    for (int i : v)
+        std::cout << i << ' ';
+    std::cout << '\n';
+
+    return 0;
+}
+```
+
+# Chapter 17: Fixed-size arrays: std::array and C-style arrays
+
+Fixed-size arrays (also called fixed-length arrays) require that the length of the array be known at the point of instantiation, and that length cannot be changed afterward. C-style arrays and std::array are both fixed-size arrays.
+
+Why we require fixed-size arrays?
+1. Fixed-size arrays can be more efficient than dynamic arrays (like std::vector) because they do not require dynamic memory allocation, which can be expensive in terms of performance. The size of a fixed-size array is determined at compile time, which allows for better optimization by the compiler.
+2. Use std::array for constexpr arrays, and std::vector for non-constexpr arrays.
+
+## Defining a std::array
+
+```cpp
+#include <array>  // for std::array
+#include <vector> // for std::vector
+
+int main()
+{
+    std::array<int, 5> a {};  // a std::array of 5 ints
+
+    std::vector<int> b(5);    // a std::vector of 5 ints (for comparison)
+
+    return 0;
+}
+```
+
+
