@@ -2666,4 +2666,400 @@ int main()
 }
 ```
 
+Note: The length of a std::array must be a constant expression.
 
+```cpp
+#include <array>
+
+int main()
+{
+    std::array<int, 7> a {}; // Using a literal constant
+
+    constexpr int len { 8 };
+    std::array<int, len> b {}; // Using a constexpr variable
+
+    enum Colors
+    {
+         red,
+         green,
+         blue,
+         max_colors
+    };
+
+    std::array<int, max_colors> c {}; // Using an enumerator
+
+#define DAYS_PER_WEEK 7
+    std::array<int, DAYS_PER_WEEK> d {}; // Using a macro (don't do this, use a constexpr variable instead)
+
+    return 0;
+}
+```
+
+## Class template argument deduction (CTAD) for std::array C++17
+
+```cpp
+#include <array>
+#include <iostream>
+
+int main()
+{
+    constexpr std::array a1 { 9, 7, 5, 3, 1 }; // The type is deduced to std::array<int, 5>
+    constexpr std::array a2 { 9.7, 7.31 };     // The type is deduced to std::array<double, 2>
+
+    return 0;
+}
+```
+Note:
+std::get() does compile-time bounds checking for constexpr indices.
+
+```cpp
+#include <array>
+#include <iostream>
+
+int main()
+{
+    constexpr std::array prime{ 2, 3, 5, 7, 11 };
+
+    std::cout << std::get<3>(prime); // print the value of element with index 3
+    std::cout << std::get<9>(prime); // invalid index (compile error)
+
+    return 0;
+}
+```
+
+## Using function templates to pass std::array of different element types or lengths
+
+```cpp
+#include <array>
+#include <iostream>
+
+template <typename T, std::size_t N> // note that this template parameter declaration matches the one for std::array
+void passByRef(const std::array<T, N>& arr)
+{
+    static_assert(N != 0); // fail if this is a zero-length std::array
+
+    std::cout << arr[0] << '\n';
+}
+
+int main()
+{
+    std::array arr{ 9, 7, 5, 3, 1 }; // use CTAD to infer std::array<int, 5>
+    passByRef(arr);  // ok: compiler will instantiate passByRef(const std::array<int, 5>& arr)
+
+    std::array arr2{ 1, 2, 3, 4, 5, 6 }; // use CTAD to infer std::array<int, 6>
+    passByRef(arr2); // ok: compiler will instantiate passByRef(const std::array<int, 6>& arr)
+
+    std::array arr3{ 1.2, 3.4, 5.6, 7.8, 9.9 }; // use CTAD to infer std::array<double, 5>
+    passByRef(arr3); // ok: compiler will instantiate passByRef(const std::array<double, 5>& arr)
+
+    return 0;
+}
+```
+
+## Auto non-type template parameters C++20
+
+```cpp
+#include <array>
+#include <iostream>
+
+template <typename T, auto N> // now using auto to deduce type of N
+void passByRef(const std::array<T, N>& arr)
+{
+    static_assert(N != 0); // fail if this is a zero-length std::array
+
+    std::cout << std::get<3>(arr) << '\n'; // checks that index 3 is valid at compile-time
+}
+
+
+int main()
+{
+    std::array arr{ 9, 7, 5, 3, 1 }; // use CTAD to infer std::array<int, 5>
+    passByRef(arr);  // ok: compiler will instantiate passByRef(const std::array<int, 5>& arr)
+
+    std::array arr2{ 1, 2, 3, 4, 5, 6 }; // use CTAD to infer std::array<int, 6>
+    passByRef(arr2); // ok: compiler will instantiate passByRef(const std::array<int, 6>& arr)
+
+    std::array arr3{ 1.2, 3.4, 5.6, 7.8, 9.9 }; // use CTAD to infer std::array<double, 5>
+    passByRef(arr3); // ok: compiler will instantiate passByRef(const std::array<double, 5>& arr)
+
+    return 0;
+}
+```
+
+## Returning a std::array via an out parameter
+
+In cases where return by value is too expensive, we can use an out-parameter instead. In this case, the caller is responsible for passing in the std::array by non-const reference (or by address), and the function can then modify this array.
+
+```cpp
+#include <array>
+#include <limits>
+#include <iostream>
+
+template <typename T, std::size_t N>
+void inputArray(std::array<T, N>& arr) // pass by non-const reference
+{
+	std::size_t index { 0 };
+	while (index < N)
+	{
+		std::cout << "Enter value #" << index << ": ";
+		std::cin >> arr[index];
+
+		if (!std::cin) // handle bad input
+		{
+			std::cin.clear();
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			continue;
+		}
+		++index;
+	}
+
+}
+
+int main()
+{
+	std::array<int, 5> arr {};
+	inputArray(arr);
+
+	std::cout << "The value of element 2 is " << arr[2] << '\n';
+
+	return 0;
+}
+```
+Note: // Doesn't work
+constexpr std::array<House, 3> houses { // initializer for houses
+    { 13, 1, 7 }, // initializer for C-style array member with implementation_defined_name
+    { 14, 2, 5 }, // ?
+    { 15, 2, 4 }  // ?
+};
+
+![alt text](image-61.png)
+
+Correct way:
+
+![alt text](image-62.png)
+
+## Arrays of references via std::reference_wrapper
+
+Arrays can have elements of any object type. This includes objects with fundamental types (e.g. int) and objects with compound types (e.g. pointer to int).
+
+However, because references are not objects, you cannot make an array of references. The elements of an array must also be assignable, and references can’t be reseated.
+
+```cpp
+#include <array>
+#include <iostream>
+
+int main()
+{
+    int x { 1 };
+    int y { 2 };
+
+    [[maybe_unused]] std::array<int&, 2> refarr { x, y }; // compile error: cannot define array of references
+
+    int& ref1 { x };
+    int& ref2 { y };
+    [[maybe_unused]] std::array valarr { ref1, ref2 }; // ok: this is actually a std::array<int, 2>, not an array of references
+
+    return 0;
+}
+```
+
+std::reference_wrapper is a standard library class template that lives in the <functional> header. It takes a type template argument T, and then behaves like a modifiable lvalue reference to T.
+
+Note: 
+There are a few things worth noting about std::reference_wrapper:
+
+* Operator= will reseat a std::reference_wrapper (change which object is being referenced).
+* std::reference_wrapper<T> will implicitly convert to T&.
+* The get() member function can be used to get a T&. This is useful when we want to update the value of the object being referenced.
+
+![alt text](image-63.png)
+
+## C-style arrays
+
+* Declaring a C-style array
+
+```cpp
+int main()
+{
+    int testScore[30] {};      // Defines a C-style array named testScore that contains 30 value-initialized int elements (no include required)
+
+    //  std::array<int, 30> arr{}; // For comparison, here's a std::array of 30 value-initialized int elements (requires #including <array>)
+
+    return 0;
+}
+```
+
+Note: The length of a C-style array must be a constant expression.
+
+Note: Zero-length C-style arrays are not allowed in standard C++. However, some compilers may allow them as an extension. If you need a zero-length array, you can use a std::array with a length of zero instead.
+
+```cpp
+int main()
+{
+    int bad[] {}; // error: the compiler will deduce this to be a zero-length array, which is disallowed!
+
+    return 0;
+}
+```
+
+### Getting the length of a C-style array
+
+In C++17, we can use std::size() (defined in the <iterator> header), which returns the array length as an unsigned integral value (of type std::size_t). In C++20, we can also use std::ssize(), which returns the array length as a signed integral value (of a large signed integral type, probably std::ptrdiff_t).
+
+```cpp
+#include <iostream>
+#include <iterator> // for std::size and std::ssize
+
+int main()
+{
+    const int prime[] { 2, 3, 5, 7, 11 };   // the compiler will deduce prime to have length 5
+
+    std::cout << std::size(prime) << '\n';  // C++17, returns unsigned integral value 5
+    std::cout << std::ssize(prime) << '\n'; // C++20, returns signed integral value 5
+
+    return 0;
+}
+```
+
+### Copying a C-style array
+
+```cpp
+#include <algorithm> // for std::copy
+
+int main()
+{
+    int arr[] { 1, 2, 3 };
+    int src[] { 5, 6, 7 };
+
+    // Copy src into arr
+    std::copy(std::begin(src), std::end(src), std::begin(arr));
+
+    return 0;
+}
+```
+
+### Array decay and pointer arithmetic
+
+When we use the name of a C-style array in an expression, it decays to a pointer to the first element of the array. This means that if we have an array int arr[5], then arr will decay to a pointer of type int* that points to the first element of the array (arr[0]).
+
+Also, const int arr[5] will decay to const int* (not int*), which is a pointer to a const int. This means that we cannot modify the elements of the array through this pointer.
+
+
+### Pointer arithmetic can be used to traverse an array
+
+```cpp
+#include <iostream>
+
+int main()
+{
+	constexpr int arr[]{ 9, 7, 5, 3, 1 };
+
+	const int* begin{ arr };                // begin points to start element
+	const int* end{ arr + std::size(arr) }; // end points to one-past-the-end element
+
+	for (; begin != end; ++begin)           // iterate from begin up to (but excluding) end
+	{
+		std::cout << *begin << ' ';     // dereference our loop variable to get the current element
+	}
+
+	return 0;
+}
+```
+
+## C-style strings
+
+### Defining C-style strings
+
+```cpp
+char str1[8]{};                    // an array of 8 char, indices 0 through 7
+
+const char str2[]{ "string" };     // an array of 7 char, indices 0 through 6
+constexpr char str3[] { "hello" }; // an array of 6 const char, indices 0 through 5
+```
+Remember that we need an extra character for the implicit null terminator.
+
+### Outputting a C-style string
+
+```cpp
+#include <iostream>
+
+void print(char ptr[])
+{
+    std::cout << ptr << '\n'; // output string
+}
+
+int main()
+{
+    char str[]{ "string" };
+    std::cout << str << '\n'; // outputs string
+
+    print(str);
+
+    return 0;
+}
+```
+
+## Modifying C-style strings
+
+One important point to note is that C-style strings follow the same rules as C-style arrays. This means you can initialize the string upon creation, but you can not assign values to it using the assignment operator after that!
+
+```cpp
+char str[]{ "string" }; // ok
+str = "rope";           // not ok!
+```
+
+Since C-style strings are arrays, you can use the [] operator to change individual characters in the string:
+
+```cpp
+#include <iostream>
+
+int main()
+{
+    char str[]{ "string" };
+    std::cout << str << '\n';
+    str[1] = 'p';
+    std::cout << str << '\n';
+
+    return 0;
+}
+```
+
+### Getting the length of an C-style string
+
+Because C-style strings are C-style arrays, you can use std::size() (or in C++20, std::ssize()) to get the length of the string as an array. There are two caveats here:
+
+* This doesn’t work on decayed st ngs.
+* Returns the actual length of the C-style array, not the length of the string.
+
+```cpp
+#include <iostream>
+
+int main()
+{
+    char str[255]{ "string" }; // 6 characters + null terminator
+    std::cout << "length = " << std::size(str) << '\n'; // prints length = 255
+
+    char *ptr { str };
+    std::cout << "length = " << std::size(ptr) << '\n'; // compile error
+
+    return 0;
+}
+```
+
+Alternatively, we can use the std::strlen() function (defined in the <cstring> header) to get the length of a C-style string. This function returns the number of characters in the string before the null terminator.
+
+```cpp
+#include <cstring> // for std::strlen
+#include <iostream>
+
+int main()
+{
+    char str[255]{ "string" }; // 6 characters + null terminator
+    std::cout << "length = " << std::strlen(str) << '\n'; // prints length = 6
+
+    char *ptr { str };
+    std::cout << "length = " << std::strlen(ptr) << '\n';   // prints length = 6
+
+    return 0;
+}
+```
