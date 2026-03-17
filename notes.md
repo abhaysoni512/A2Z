@@ -3063,3 +3063,139 @@ int main()
     return 0;
 }
 ```
+
+## 2d arrays
+
+### Iterating over a 2d array 
+
+```cpp
+#include <iostream>
+
+int main()
+{
+    int arr[3][4] {
+        { 1, 2, 3, 4 },
+        { 5, 6, 7, 8 },
+        { 9, 10, 11, 12 }};
+
+    // double for-loop with indices
+    for (std::size_t row{0}; row < std::size(arr); ++row) // std::size(arr) returns the number of rows
+    {
+        for (std::size_t col{0}; col < std::size(arr[0]); ++col) // std::size(arr[0]) returns the number of columns
+            std::cout << arr[row][col] << ' ';
+
+        std::cout << '\n';
+    }
+
+    // double range-based for-loop
+    for (const auto& arow: arr)   // get each array row
+    {
+        for (const auto& e: arow) // get each element of the row
+            std::cout << e << ' ';
+
+        std::cout << '\n';
+    }
+
+    return 0;
+}
+```
+
+## Multidimensional arrays ussing std::array
+
+```cpp
+std::array<std::array<int, 4>, 3> arr {{  // note double braces
+    { 1, 2, 3, 4 },
+    { 5, 6, 7, 8 },
+    { 9, 10, 11, 12 }}};
+```
+
+Note: To avoid brace elision, we need to use double braces when initializing a multidimensional std::array. The outer braces are for the outer std::array, and the inner braces are for the inner std::array. This is necessary because of how C++ parses initializer lists.
+
+### Passing a multidimensional std::array to a function template
+
+```cpp
+#include <array>
+#include <iostream>
+
+template <typename T, std::size_t Row, std::size_t Col>
+void printArray(const std::array<std::array<T, Col>, Row> &arr)
+{
+    for (const auto& arow: arr)   // get each array row
+    {
+        for (const auto& e: arow) // get each element of the row
+            std::cout << e << ' ';
+
+        std::cout << '\n';
+    }
+}
+
+int main()
+{
+    std::array<std::array<int, 4>, 3>  arr {{
+        { 1, 2, 3, 4 },
+        { 5, 6, 7, 8 },
+        { 9, 10, 11, 12 }}};
+
+    printArray(arr);
+
+    return 0;
+}
+```
+
+# Chapter 18: Iterators and Algorithms
+
+## Iterators: An iterator is an object designed to traverse through a container (e.g. the values in an array, or the characters in a string), providing access to each element along the way.
+
+* Pointers as an iterator:-
+
+```cpp
+#include <array>
+#include <iostream>
+
+int main()
+{
+    std::array arr{ 0, 1, 2, 3, 4, 5, 6 };
+
+    auto begin{ &arr[0] };
+    // note that this points to one spot beyond the last element
+    auto end{ begin + std::size(arr) };
+
+    // for-loop with pointer
+    for (auto ptr{ begin }; ptr != end; ++ptr) // ++ to move to next element
+    {
+        std::cout << *ptr << ' '; // Indirection to get value of current element
+    }
+    std::cout << '\n';
+
+    return 0;
+}
+```
+
+* Standard library iterators
+```cpp
+
+Iterating is such a common operation that all standard library containers offer direct support for iteration. Instead of calculating our own begin and end points, we can simply ask the container for the begin and end points via member functions conveniently named begin() and end():
+
+#include <array>
+#include <iostream>
+
+int main()
+{
+    std::array array{ 1, 2, 3 };
+
+    // Ask our array for the begin and end points (via the begin and end member functions).
+    auto begin{ array.begin() };
+    auto end{ array.end() };
+
+    for (auto p{ begin }; p != end; ++p) // ++ to move to next element.
+    {
+        std::cout << *p << ' '; // Indirection to get value of current element.
+    }
+    std::cout << '\n';
+
+    return 0;
+}
+```
+
+## Introduction to standard library algorithms
+
