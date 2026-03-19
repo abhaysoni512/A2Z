@@ -3199,3 +3199,287 @@ int main()
 
 ## Introduction to standard library algorithms
 
+### std::find() to find an element by value
+
+std::find searches for the first occurrence of a value in a container. std::find takes 3 parameters: an iterator to the starting element in the sequence, an iterator to the ending element in the sequence, and a value to search for. It returns an iterator pointing to the element (if it is found) or the end of the container (if the element is not found).
+
+```cpp
+#include <algorithm>
+#include <array>
+#include <iostream>
+
+int main()
+{
+    std::array arr{ 13, 90, 99, 5, 40, 80 };
+
+    std::cout << "Enter a value to search for and replace with: ";
+    int search{};
+    int replace{};
+    std::cin >> search >> replace;
+
+    // Input validation omitted
+
+    // std::find returns an iterator pointing to the found element (or the end of the container)
+    // we'll store it in a variable, using type inference to deduce the type of
+    // the iterator (since we don't care)
+    auto found{ std::find(arr.begin(), arr.end(), search) };
+
+    // Algorithms that don't find what they were looking for return the end iterator.
+    // We can access it by using the end() member function.
+    if (found == arr.end())
+    {
+        std::cout << "Could not find " << search << '\n';
+    }
+    else
+    {
+        // Override the found element.
+        *found = replace;
+    }
+
+    for (int i : arr)
+    {
+        std::cout << i << ' ';
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+```
+
+### Using std::find_if to find an element that matches some condition
+
+The std::find_if function works similarly to std::find, but instead of passing in a specific value to search for, we pass in a callable object, such as a function pointer (or a lambda, which we’ll cover later). For each element being iterated over, std::find_if will call this function (passing the element as an argument to the function), and the function can return true if a match is found, or false otherwise.
+
+```cpp
+#include <algorithm>
+#include <array>
+#include <iostream>
+#include <string_view>
+
+// Our function will return true if the element matches
+bool containsNut(std::string_view str)
+{
+    // std::string_view::find returns std::string_view::npos if it doesn't find
+    // the substring. Otherwise it returns the index where the substring occurs
+    // in str.
+    return str.find("nut") != std::string_view::npos;
+}
+
+int main()
+{
+    std::array<std::string_view, 4> arr{ "apple", "banana", "walnut", "lemon" };
+
+    // Scan our array to see if any elements contain the "nut" substring
+    auto found{ std::find_if(arr.begin(), arr.end(), containsNut) };
+
+    if (found == arr.end())
+    {
+        std::cout << "No nuts\n";
+    }
+    else
+    {
+        std::cout << "Found " << *found << '\n';
+    }
+
+    return 0;
+}
+```
+
+### Using std::count and std::count_if to count how many occurrences there are
+
+std::count and std::count_if search for all occurrences of an element or an element fulfilling a condition.
+
+```cpp
+#include <algorithm>
+#include <array>
+#include <iostream>
+#include <string_view>
+
+bool containsNut(std::string_view str)
+{
+	return str.find("nut") != std::string_view::npos;
+}
+
+int main()
+{
+	std::array<std::string_view, 5> arr{ "apple", "banana", "walnut", "lemon", "peanut" };
+
+	auto nuts{ std::count_if(arr.begin(), arr.end(), containsNut) };
+
+	std::cout << "Counted " << nuts << " nut(s)\n";
+
+	return 0;
+}
+```
+
+### Using std::sort to custom sort
+
+We previously used std::sort to sort an array in ascending order, but std::sort can do more than that. There’s a version of std::sort that takes a function as its third parameter that allows us to sort however we like. The function takes two parameters to compare, and returns true if the first argument should be ordered before the second. By default, std::sort sorts the elements in ascending order.
+
+```cpp
+#include <algorithm>
+#include <array>
+#include <iostream>
+
+bool greater(int a, int b)
+{
+    // Order @a before @b if @a is greater than @b.
+    return (a > b);
+}
+
+int main()
+{
+    std::array arr{ 13, 90, 99, 5, 40, 80 };
+
+    // Pass greater to std::sort
+    std::sort(arr.begin(), arr.end(), greater);
+
+    for (int i : arr)
+    {
+        std::cout << i << ' ';
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+```
+
+Note:
+
+![alt text](image-64.png)
+
+### Ranges in C++20
+
+Having to explicitly pass arr.begin() and arr.end() to every algorithm is a bit annoying. But fear not -- C++20 adds ranges, which allow us to simply pass arr. This will make our code even shorter and more readable.
+
+```cpp
+#include <algorithm>
+#include <array>
+#include <iostream>
+
+int main()
+{
+    std::array arr{ 13, 90, 99, 5, 40, 80 };
+
+    // Pass arr to std::sort
+    std::sort(arr);
+
+    for (int i : arr)
+    {
+        std::cout << i << ' ';
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+```
+
+Note: Not all algorithms support ranges yet, but more and more are being added with each new C++ standard.
+
+## Timing your code
+
+sometimes you’ll run across cases where you’re not sure whether one method or another will be more performant. So how do you tell?
+
+One easy way is to time your code to see how long it takes to run. C++11 comes with some functionality in the chrono library to do just that. However, using the chrono library is a bit arcane. The good news is that we can easily encapsulate all the timing functionality we need into a class that we can then use in our own programs.
+
+```cpp
+#include <chrono> // for std::chrono functions
+
+class Timer
+{
+private:
+	// Type aliases to make accessing nested type easier
+	using Clock = std::chrono::steady_clock;
+	using Second = std::chrono::duration<double, std::ratio<1> >;
+
+	std::chrono::time_point<Clock> m_beg { Clock::now() };
+
+public:
+	void reset()
+	{
+		m_beg = Clock::now();
+	}
+
+	double elapsed() const
+	{
+		return std::chrono::duration_cast<Second>(Clock::now() - m_beg).count();
+	}
+};
+
+Usage:
+
+#include <array>
+#include <chrono> // for std::chrono functions
+#include <cstddef> // for std::size_t
+#include <iostream>
+#include <numeric> // for std::iota
+
+const int g_arrayElements { 10000 };
+
+class Timer
+{
+private:
+    // Type aliases to make accessing nested type easier
+    using Clock = std::chrono::steady_clock;
+    using Second = std::chrono::duration<double, std::ratio<1> >;
+
+    std::chrono::time_point<Clock> m_beg{ Clock::now() };
+
+public:
+
+    void reset()
+    {
+        m_beg = Clock::now();
+    }
+
+    double elapsed() const
+    {
+        return std::chrono::duration_cast<Second>(Clock::now() - m_beg).count();
+    }
+};
+
+void sortArray(std::array<int, g_arrayElements>& array)
+{
+
+    // Step through each element of the array
+    // (except the last one, which will already be sorted by the time we get there)
+    for (std::size_t startIndex{ 0 }; startIndex < (g_arrayElements - 1); ++startIndex)
+    {
+        // smallestIndex is the index of the smallest element we’ve encountered this iteration
+        // Start by assuming the smallest element is the first element of this iteration
+        std::size_t smallestIndex{ startIndex };
+
+        // Then look for a smaller element in the rest of the array
+        for (std::size_t currentIndex{ startIndex + 1 }; currentIndex < g_arrayElements; ++currentIndex)
+        {
+            // If we've found an element that is smaller than our previously found smallest
+            if (array[currentIndex] < array[smallestIndex])
+            {
+                // then keep track of it
+                smallestIndex = currentIndex;
+            }
+        }
+
+        // smallestIndex is now the smallest element in the remaining array
+        // swap our start element with our smallest element (this sorts it into the correct place)
+        std::swap(array[startIndex], array[smallestIndex]);
+    }
+}
+
+int main()
+{
+    std::array<int, g_arrayElements> array;
+    std::iota(array.rbegin(), array.rend(), 1); // fill the array with values 10000 to 1
+
+    Timer t;
+
+    sortArray(array);
+
+    std::cout << "Time taken: " << t.elapsed() << " seconds\n";
+
+    return 0;
+}
+```
