@@ -3483,3 +3483,589 @@ int main()
     return 0;
 }
 ```
+
+# Chapter 19: Dynamic memory allocation with new and delete
+
+## Dynamically allocating single variables
+
+```cpp
+new int; // dynamically allocate an integer (and discard the result)
+int* ptr{ new int }; // dynamically allocate an integer and assign the address to ptr so we can access it later
+```
+In the above case, we’re requesting an integer’s worth of memory from the operating system. The new operator creates the object using that memory, and then returns a pointer containing the address of the memory that has been allocated.
+
+### How does dynamic memory allocation work?
+
+When you dynamically allocate memory, you’re asking the operating system to reserve some of that memory for your program’s use. If it can fulfill this request, it will return the address of that memory to your application. From that point forward, your application can use this memory as it wishes. When your application is done with the memory, it can return the memory back to the operating system to be given to another program.
+
+### Initializing a dynamically allocated variable
+
+```cpp
+int* ptr1{ new int (5) }; // use direct initialization
+int* ptr2{ new int { 6 } }; // use uniform initialization`
+```
+
+### Deleting a single variable
+
+```cpp
+// assume ptr has previously been allocated with operator new
+delete ptr; // return the memory pointed to by ptr to the operating system
+ptr = nullptr; // set ptr to be a null pointer
+```
+
+Note: After we delete a pointer, it becomes a dangling pointer, which is a pointer that points to memory that has been deallocated. Accessing a dangling pointer results in undefined behavior. To avoid this, we can set the pointer to nullptr after deleting it.
+
+### What does it mean to delete memory?
+
+The delete operator does not actually delete anything. It simply returns the memory being pointed to back to the operating system. The operating system is then free to reassign that memory to another application (or to this application again later).
+
+### Dangling pointers
+
+C++ does not make any guarantees about what will happen to the contents of deallocated memory, or to the value of the pointer being deleted. In most cases, the memory returned to the operating system will contain the same values it had before it was returned, and the pointer will be left pointing to the now deallocated memory.
+
+A pointer that is pointing to deallocated memory is called a dangling pointer. Dereferencing or deleting a dangling pointer will lead to undefined behavior. Consider the following program:
+
+```cpp
+#include <iostream>
+
+int main()
+{
+    int* ptr{ new int }; // dynamically allocate an integer
+    *ptr = 7; // put a value in that memory location
+
+    delete ptr; // return the memory to the operating system.  ptr is now a dangling pointer.
+
+    std::cout << *ptr; // Dereferencing a dangling pointer will cause undefined behavior
+    delete ptr; // trying to deallocate the memory again will also lead to undefined behavior.
+
+    return 0;
+}
+```
+
+Note: Operator new can fail to allocate memory, in which case it will throw a std::bad_alloc exception. If this exception isn’t properly handled (and it won’t be, since we haven’t covered exceptions or exception handling yet), the program will simply terminate (crash) with an unhandled exception error. 
+
+In many cases, having new throw an exception (or having your program crash) is undesirable, so there’s an alternate form of new that can be used instead to tell new to return a null pointer if memory can’t be allocated. This is done by adding the constant std::nothrow between the new keyword and the allocation type:
+
+```cpp
+#include <new> // for std::nothrow
+
+int main()
+{
+    int* ptr{ new (std::nothrow) int }; // dynamically allocate an integer, but return nullptr if allocation fails
+
+    if (ptr == nullptr)
+    {
+        std::cout << "Memory allocation failed\n";
+    }
+    else
+    {
+        *ptr = 7; // put a value in that memory location
+        std::cout << *ptr << '\n';
+        delete ptr; // return the memory to the operating system
+    }
+
+    return 0;
+}
+```
+
+### Memory leaks
+
+Memory leaks happen when your program loses the address of some bit of dynamically allocated memory before giving it back to the operating system. When this happens, your program can’t delete the dynamically allocated memory, because it no longer knows where it is. The operating system also can’t use this memory, because that memory is considered to be still in use by your program.
+
+## Dynamically allocating arrays
+
+```cpp
+#include <cstddef>
+#include <iostream>
+
+int main()
+{
+    std::cout << "Enter a positive integer: ";
+    std::size_t length{};
+    std::cin >> length;
+
+    int* array{ new int[length]{} }; // use array new.  Note that length does not need to be constant!
+
+    std::cout << "I just allocated an array of integers of length " << length << '\n';
+
+    array[0] = 5; // set element 0 to value 5
+
+    delete[] array; // use array delete to deallocate array
+
+    // we don't need to set array to nullptr/0 here because it's going out of scope immediately after this anyway
+
+    return 0;
+}
+```
+
+We are allocating an array, C++ knows that it should use the array version of new instead of the scalar version of new. Essentially, the new[] operator is called, even though the [] isn’t placed next to the new keyword.
+
+Note: The length of dynamically allocated arrays has type std::size_t. If you are using a non-constexpr int, you’ll need to static_cast to std::size_t since that is considered a narrowing conversion and your compiler will warn otherwise.
+
+### Dynamically deleting arrays
+
+When deleting a dynamically allocated array, we have to use the array version of delete, which is delete[].
+
+How does array delete know how much memory to delete?
+
+When you use new[] to allocate an array, the implementation typically allocates a little extra memory to store the size of the array. This allows delete[] to know how many elements to destroy and how much memory to deallocate when you call it.
+
+### Initializing dynamically allocated arrays
+
+![alt text](image-65.png)
+
+
+##  Destructors
+
+A destructor is another special kind of class member function that is executed when an object of that class is destroyed. Whereas constructors are designed to initialize a class, destructors are designed to help clean up.
+
+When an object goes out of scope normally, or a dynamically allocated object is explicitly deleted using the delete keyword, the class destructor is automatically called (if it exists) to do any necessary clean up before the object is removed from memory.
+
+### Destructor naming
+
+    The destructor must have the same name as the class, preceded by a tilde (~).
+    The destructor can not take arguments.
+    The destructor has no return type.
+
+```cpp
+
+#include <iostream>
+
+class MyIntArray{
+private:
+    int *m_Array{};
+    std::size_t m_length{};
+
+public:
+    MyIntArray(int length){
+        assert(length > 0); // make sure length is valid
+        m_Array = new int[static_cast<std::size_t>(length)]{}; // allocate an array of ints
+        m_length = static_cast<std::size_t>(length);
+       std:: cout << "Constructor called for array of length " << length << '\n';
+    }
+
+    ~MyIntArray() // destructor
+    {
+        std::cout << "Destructor called for array of length " << m_length << '\n';
+        delete[] m_Array; // deallocate the array
+    }
+
+    // other member functions omitted for brevity
+    void setValue(std::size_t index, int value)
+    {
+        assert(index < m_length); // make sure index is valid
+        m_Array[index] = value;
+    }
+
+    int getValue(std::size_t index) const
+    {
+        assert(index < m_length); // make sure index is valid
+        return m_Array[index];
+    }
+
+    int getLength() const
+    {
+        return static_cast<int>(m_length);
+    }
+}
+
+int main(){
+    // MyIntArray arr variable created on stack, but it dynamically allocates an array of integers on the heap
+    MyIntArray arr{5}; // create an array of 5 integers
+
+    for( int i = 0; i < arr.getLength(); ++i){
+        arr.setValue(i, i + 1); // set values to 1, 2, 3, 4, 5
+    }
+
+    for( int i = 0; i < arr.getLength(); ++i){
+        std::cout << arr.getValue(i) << ' '; // print the values
+    }
+
+    // To create a MyIntArray on the heap, we can use new:
+    MyIntArray* ptrArr{ new MyIntArray{10} }; // create an array of 10 integers on the heap
+    std::cout << ptrArr->getLength() << '\n'; // print the length of the array>
+
+    delete ptrArr; // delete the array on the heap (this will call the destructor to clean up the dynamically allocated array)
+}
+```
+## RAII : Resource Acquisition Is Initialization
+
+RAII is a programming technique that binds the lifecycle of a resource (e.g. dynamically allocated memory, file handles, network connections) to the lifetime of an object. This means that when an object is created, it acquires the resource, and when the object is destroyed (e.g. goes out of scope or is deleted), it releases the resource.
+
+A resource (such as memory, a file or database handle, etc…) is typically acquired in the object’s constructor (though it can be acquired after the object is created if that makes sense). That resource can then be used while the object is alive. The resource is released in the destructor, when the object is destroyed. The primary advantage of RAII is that it helps prevent resource leaks (e.g. memory not being deallocated) as all resource-holding objects are cleaned up automatically.
+
+## Pointers to pointers and dynamic multidimensional arrays
+
+A pointer to a pointer to an int is declared using two asterisks:
+
+```cpp
+int** ptr;
+```
+
+```cpp
+int value { 5 };
+
+int* ptr { &value };
+std::cout << *ptr << '\n'; // Dereference pointer to int to get int value
+
+int** ptrptr { &ptr };
+std::cout << **ptrptr << '\n'; // dereference to get pointer to int, dereference again to get int value
+```
+
+### Arrays of pointers
+
+Pointers to pointers have a few uses. The most common use is to dynamically allocate an array of pointers:
+
+```cpp
+int** array { new int*[10] }; // allocate an array of 10 int pointers
+```
+
+* Two-dimensional dynamically allocated arrays
+
+```cpp
+int** array { new int[10][5] }; // won’t work!
+```
+
+❌ What’s Wrong?
+👉 new int[10][5] does NOT return int** it will return 
+```cpp
+int (*)[5]   // pointer to an array of 5 ints
+```
+
+We shoudld do : 
+
+![alt text](image-67.png)
+
+![alt text](image-68.png)
+
+* Deleting a dynamically allocated 2d array
+
+```cpp
+for (int count { 0 }; count < 10; ++count)
+    delete[] array[count];
+delete[] array; // this needs to be done last
+```
+
+Or modern C++ way:
+
+```cpp
+vector<vector<int>> arr(10, vector<int>(5));
+```
+
+## Void pointers
+
+The void pointer, also known as the generic pointer, is a special type of pointer that can be pointed at objects of any data type! A void pointer is declared like a normal pointer, using the void keyword as the pointer’s type:
+
+```cpp
+
+int nValue {};
+float fValue {};
+
+struct Something
+{
+    int n;
+    float f;
+};
+
+Something sValue {};
+
+void* ptr {};
+ptr = &nValue; // valid
+ptr = &fValue; // valid
+ptr = &sValue; // valid
+
+```
+
+However, because the void pointer does not know what type of object it is pointing to, dereferencing a void pointer is illegal. Instead, the void pointer must first be cast to another pointer type before the dereference can be performed.
+
+```cpp
+int value{ 5 };
+void* voidPtr{ &value };
+
+// std::cout << *voidPtr << '\n'; // illegal: dereference of void pointer
+
+int* intPtr{ static_cast<int*>(voidPtr) }; // however, if we cast our void pointer to an int pointer... why static_cast? Because we know that voidPtr is actually pointing to an int, so we can safely use static_cast to cast it to an int pointer. If we were unsure of the type of object being pointed to, we would need to use dynamic_cast instead, which performs a runtime check to ensure that the cast is valid.
+
+std::cout << *intPtr << '\n'; // then we can dereference the result
+```
+
+# Functions
+
+## Function Pointers
+
+Function pointers are similar, except that instead of pointing to variables, they point to functions!
+
+```cpp
+int foo() // code for foo starts at memory address 0x002717f0
+{
+    return 5;
+}
+
+int main()
+{
+    foo(); // jump to address 0x002717f0
+    cout<< foo << '\n'; // it will print true
+    return 0;
+}
+```
+
+Note: When a function is referred to by name (without parenthesis), C++ converts the function into a function pointer (holding the address of the function). Then operator<< tries to print the function pointer, which it fails at because operator<< does not know how to print function pointers. The standard says that in this case, foo should be converted to a bool (which operator<< does know how to print). And since the function pointer for foo is a non-null pointer, it should always evaluate to Boolean true. Thus, this should print:
+
+### Pointers to functions
+
+```cpp
+// fcnPtr is a pointer to a function that takes no arguments and returns an integer
+int (*fcnPtr)();
+```
+
+to make it const,
+```cpp
+int (*const fcnPtr)();
+```
+
+### Assigning a function to a function pointer
+
+```cpp
+int foo()
+{
+    return 5;
+}
+
+int goo()
+{
+    return 6;
+}
+
+int main()
+{
+    int (*fcnPtr)(){ &foo }; // fcnPtr points to function foo
+    fcnPtr = &goo; // fcnPtr now points to function goo
+
+    return 0;
+}
+```
+
+Note:
+```cpp
+// function prototypes
+int foo();
+double goo();
+int hoo(int x);
+
+// function pointer initializers
+int (*fcnPtr1)(){ &foo };    // okay
+int (*fcnPtr2)(){ &goo };    // wrong -- return types don't match!
+double (*fcnPtr4)(){ &goo }; // okay
+fcnPtr1 = &hoo;              // wrong -- fcnPtr1 has no parameters, but hoo() does
+int (*fcnPtr3)(int){ &hoo }; // okay
+```
+
+### Calling a function using a function pointer
+
+```cpp
+
+int foo(int x)
+{
+    return x;
+}
+
+int main()
+{
+    int (*fcnPtr)(int){ &foo }; // Initialize fcnPtr with function foo
+    (*fcnPtr)(5); // call function foo(5) through fcnPtr.
+    // or  fcnPtr(5); // call function foo(5) through fcnPtr
+
+    return 0;
+}
+```
+
+### Passing functions as arguments to other functions
+
+One of the most useful things to do with function pointers is pass a function as an argument to another function. Functions used as arguments to another function are sometimes called callback functions.
+
+Consider a case where you are writing a function to perform a task (such as sorting an array), but you want the user to be able to define how a particular part of that task will be performed (such as whether the array is sorted in ascending or descending order). Let’s take a closer look at this problem as applied specifically to sorting, as an example that can be generalized to other similar problems.
+
+```cpp
+
+void selectionSort(int *array, int size){
+    for( int startIndex = 0; startIndex < size - 1; ++startIndex){
+        int smallestIndex = startIndex;
+        // 5 4 3 2 1
+        for( int currentIndex = startIndex + 1; currentIndex < size; ++currentIndex){
+            if( array[currentIndex] < array[smallestIndex] ){
+                smallestIndex = currentIndex;
+            }
+        }
+        std::swap(array[startIndex], array[smallestIndex]);
+    }
+}
+```
+
+Now we want to allow the user to specify whether the array is sorted in ascending or descending order. We can do this by passing a function pointer to selectionSort that points to a function that compares two integers and returns true if the first integer should be ordered before the second integer, and false otherwise.
+
+```cpp
+#include <utility> // for std::swap
+#include <iostream>
+
+// Note our user-defined comparison is the third parameter
+void selectionSort(int* array, int size, bool (*comparisonFcn)(int, int))
+{
+    if (!array || !comparisonFcn)
+        return;
+
+    // Step through each element of the array
+    for (int startIndex{ 0 }; startIndex < (size - 1); ++startIndex)
+    {
+        // bestIndex is the index of the smallest/largest element we've encountered so far.
+        int bestIndex{ startIndex };
+
+        // Look for smallest/largest element remaining in the array (starting at startIndex+1)
+        for (int currentIndex{ startIndex + 1 }; currentIndex < size; ++currentIndex)
+        {
+            // If the current element is smaller/larger than our previously found smallest
+            if (comparisonFcn(array[bestIndex], array[currentIndex])) // COMPARISON DONE HERE
+            {
+                // This is the new smallest/largest number for this iteration
+                bestIndex = currentIndex;
+            }
+        }
+
+        // Swap our start element with our smallest/largest element
+        std::swap(array[startIndex], array[bestIndex]);
+    }
+}
+
+// Here is a comparison function that sorts in ascending order
+// (Note: it's exactly the same as the previous ascending() function)
+bool ascending(int x, int y)
+{
+    return x > y; // swap if the first element is greater than the second
+}
+
+// Here is a comparison function that sorts in descending order
+bool descending(int x, int y)
+{
+    return x < y; // swap if the second element is greater than the first
+}
+
+// This function prints out the values in the array
+void printArray(int* array, int size)
+{
+    if (!array)
+        return;
+
+    for (int index{ 0 }; index < size; ++index)
+    {
+        std::cout << array[index] << ' ';
+    }
+
+    std::cout << '\n';
+}
+
+int main()
+{
+    int array[9]{ 3, 7, 9, 5, 6, 1, 8, 2, 4 };
+
+    // Sort the array in descending order using the descending() function
+    selectionSort(array, 9, descending);
+    printArray(array, 9);
+
+    // Sort the array in ascending order using the ascending() function
+    selectionSort(array, 9, ascending);
+    printArray(array, 9);
+
+    return 0;
+}
+
+```
+
+Note: Providing default function :-
+
+```cpp
+// Default the sort to ascending sort
+void selectionSort(int* array, int size, bool (*comparisonFcn)(int, int) = ascending);
+```
+
+### Using std::function instead of function pointers
+
+
+An alternate method of defining and storing function pointers is to use std::function, which is part of the standard library <functional> header. To define a function pointer using this method, declare a std::function object like so:
+
+```cpp
+
+#include <functional>
+bool validate(int x, int y, std::function<bool(int, int)> fcn); // std::function method that returns a bool and takes two int parameters
+```
+
+```cpp
+#include <functional>
+#include <iostream>
+
+int foo()
+{
+    return 5;
+}
+
+int goo()
+{
+    return 6;
+}
+
+int main(){
+    std::function<int()> fcnPtr{ foo }; // fcnPtr points to function foo
+    fcnPtr = goo; // fcnPtr now points to function goo
+
+    std::cout << fcnPtr() << '\n'; // call the function pointed to by fcnPtr and print the result , output will be 6 since fcnPtr now points to goo
+
+    return 0;
+}
+```
+## Command line arguments
+
+When a C++ program is executed, the operating system passes some information to the program, including any command line arguments that were provided when the program was launched. Command line arguments are additional pieces of information that can be passed to a program when it is executed, and they can be used to modify the behavior of the program or provide input data.
+
+```cpp
+
+int main(int argc, char* argv[])
+
+// or equivalently
+int main(int argc, char** argv)
+```
+
+suppose our program is called myprogram, and we run it from the command line like this:
+
+```
+    myprogram arg1 arg2 arg3
+```
+
+In this case, argc will be equal to 4 (the number of command line arguments, including the program name), and argv will be an array of C-style strings (character arrays) that contains the following values:
+
+```cpp
+
+#include <iostream>
+
+int main(int argc, char* argv[])
+{
+    std::cout << "Number of command line arguments: " << argc << '\n';
+
+    for (int i = 0; i < argc; ++i)
+    {
+        std::cout << "Argument " << i << ": " << argv[i] << '\n';
+    }
+
+    return 0;
+}
+```
+
+When we run this program with the command line arguments shown above, the output will be:
+
+```
+Number of command line arguments: 4
+Argument 0: myprogram
+Argument 1: arg1
+Argument 2: arg2
+Argument 3: arg3
+```
+
+## Lambda functions
+
