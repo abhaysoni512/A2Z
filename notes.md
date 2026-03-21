@@ -4069,3 +4069,10 @@ Argument 3: arg3
 
 ## Lambda functions
 
+### Lambdas are anonymous functions
+
+A lambda expression (also called a lambda or closure) allows us to define an anonymous function inside another function.
+
+
+Bene
+```cpp
