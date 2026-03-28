@@ -25,7 +25,7 @@ if [ $? -eq 0 ]; then
     echo "\n✓ Program executed successfully"
     
     # Navigate to git root
-    cd "/root/Abhay/A2Z"
+    cd $(PWD)
     #cd "/Users/abhaysoni512/Desktop/A2Z"
     
     # Check if the file is new (untracked) or has changes

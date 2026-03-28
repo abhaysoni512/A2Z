@@ -103,3 +103,25 @@ Operations:
 10. Min(): It is the operation of finding the minimum element in the array.
 11. Reverse(): It is the operation of reversing the order of elements in the array.
 12. Shift(): It is the operation of shifting all elements in the array to the left or right by a specified number of positions.
+
+
+## Problem: Largest subarray contigious sum
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// brute force approach
+int largestSubarraySumBruteForce(const std::vector<int>& arr) {
+    int maxSum = arr[0];
+    int n = arr.size();
+
+    for (int i = 0; i < n; ++i) {
+        int currentSum = 0;
+        for (int j = i; j < n; ++j) {
+            currentSum += arr[j];
+            maxSum = std::max(maxSum, currentSum);
+        }
+    }
+}
