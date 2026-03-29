@@ -52,9 +52,9 @@ An identifier with external linkage can be seen and used both from the file in w
         return 0;
     }
 ```
-Note : const global variables have internal linkage by default. Therefore, to make a const global variable accessible from other translation units, you must explicitly declare it as extern.
+Note : const global variables have internal linkage by default. Therefore, to make a const global variable accessible from other translation units, we must explicitly declare it as extern.
 
-Note: Variable forward declarations via the extern keyword, To use a global variable defined in another translation unit, you must provide a forward declaration for it using the extern keyword. A variable forward declaration tells the compiler about the variable's type and name, but does not create a new instance of the variable.
+Note: Variable forward declarations via the extern keyword, To use a global variable defined in another translation unit, we must provide a forward declaration for it using the extern keyword. A variable forward declaration tells the compiler about the variable's type and name, but does not create a new instance of the variable.
 
 example :
 ![alt text](image-3.png)
@@ -144,7 +144,7 @@ Type Casting operators in C++:
 
 First four are known as named casts or C++ style casts, while the last one is known as C-style cast.
 
-Note: Avoid const_cast and reinterpret_cast unless you have a very good reason to use them.
+Note: Avoid const_cast and reinterpret_cast unless we have a very good reason to use them.
 
 * C-style caste : The syntax for a C-style cast is as follows:
     (NewType)expression
@@ -1316,7 +1316,7 @@ int main()
     return 0;
 }
 ```
-Note: The member initializer list is defined after the constructor parameters. It begins with a colon (:), and then lists each member to initialize along with the initialization value for that variable, separated by a comma. You must use a direct form of initialization here (preferably using braces, but parentheses works as well) -- using copy initialization (with an equals) does not work here.
+Note: The member initializer list is defined after the constructor parameters. It begins with a colon (:), and then lists each member to initialize along with the initialization value for that variable, separated by a comma. we must use a direct form of initialization here (preferably using braces, but parentheses works as well) -- using copy initialization (with an equals) does not work here.
 
 ### Member initializer list formatting
 
@@ -1389,7 +1389,7 @@ int main()
 
 ### Using = default to generate an explicitly defaulted default constructor
 
-the = default syntax allows you to explicitly request that the compiler generate a special member function (like the default constructor) with its default implementation.
+the = default syntax allows we to explicitly request that the compiler generate a special member function (like the default constructor) with its default implementation.
 
 Under certain circumstances, the compiler will not generate a default constructor for a class type :
 
@@ -2045,7 +2045,7 @@ Second, it can sometimes be useful to have a member function return the implicit
 
 ## Resetting a class back to default state
 
-![alt text](image-23.png)
+![alt text](image-we.png)
 
 ## Separating class declarations and definitions into header and source files
 
@@ -2057,15 +2057,15 @@ Note: Member function defined inside the class definition are implicitly inline,
 
 ### why not put everything in a header file?
 
-First, as mentioned above, defining members inside the class definition clutters up your class definition.
+First, as mentioned above, defining members inside the class definition clutters up our class definition.
 
-Second, if you change any of the code in the header, then you’ll need to recompile every file that includes that header. This can have a ripple effect, where one minor change causes the entire program to need to recompile. The cost of recompilation can vary significantly: a small project may only take a minute or less to build, whereas a large commercial project can take hours.
+Second, if we change any of the code in the header, then you’ll need to recompile every file that includes that header. This can have a ripple effect, where one minor change causes the entire program to need to recompile. The cost of recompilation can vary significantly: a small project may only take a minute or less to build, whereas a large commercial project can take hours.
 
-Conversely, if you change the code in a .cpp file, only that .cpp file needs to be recompiled. Therefore, given the choice, it’s generally better to put non-trivial code in a .cpp file when you can.
+Conversely, if we change the code in a .cpp file, only that .cpp file needs to be recompiled. Therefore, given the choice, it’s generally better to put non-trivial code in a .cpp file when we can.
 
 ## Nested types (member types)
 
-we’ve seen class types with two different kinds of members: data members and member functions. Class types support another kind of member: nested types (also called member types). To create a nested type, you simply define the type inside the class, under the appropriate access specifier.
+we’ve seen class types with two different kinds of members: data members and member functions. Class types support another kind of member: nested types (also called member types). To create a nested type, we simply define the type inside the class, under the appropriate access specifier.
 
 ```cpp
 #include <iostream>
@@ -2103,7 +2103,7 @@ int main(){
     return 0;
 }
 ```
-Note: To access a nested type from outside the class, you need to use the scope resolution operator (::) to specify the class name followed by the nested type name. For example, if you have a nested enum called Type inside a class called Fruit, you would access it as Fruit::Type.
+Note: To access a nested type from outside the class, we need to use the scope resolution operator (::) to specify the class name followed by the nested type name. For example, if we have a nested enum called Type inside a class called Fruit, we would access it as Fruit::Type.
 
 ## Nested classes and access to outer class members
 
@@ -2161,7 +2161,7 @@ Note: Nested types and forward declarations
 
 ![alt text](image-26.png)
 
-However, a nested type cannot be forward declared prior to the definition of the enclosing class. This is because the nested type is not in scope until the definition of the enclosing class is complete. Therefore, if you try to forward declare a nested type before the enclosing class is defined, you will get a compile error.
+However, a nested type cannot be forward declared prior to the definition of the enclosing class. This is because the nested type is not in scope until the definition of the enclosing class is complete. Therefore, if we try to forward declare a nested type before the enclosing class is defined, we will get a compile error.
 
 ## Introduction to Destructors
 
@@ -2396,7 +2396,7 @@ Note:
 
 1. First, even though Display is a friend of Storage, Display has no access to the *this pointer of Storage objects (because *this is actually a function parameter).
 
-2. Second, friendship is not reciprocal. Just because Display is a friend of Storage does not mean Storage is also a friend of Display. If you want two classes to be friends of each other, both must declare the other as a friend.
+2. Second, friendship is not reciprocal. Just because Display is a friend of Storage does not mean Storage is also a friend of Display. If we want two classes to be friends of each other, both must declare the other as a friend.
 
 ## Friend member functions
 
@@ -2419,8 +2419,8 @@ However, it turns out this won’t work. In order to make a single member functi
 1. Recap: What is the "implicit object" (*this)?
     Every member function has a hidden parameter: *this.
 
-    When you write joe.getName(), *this is lvalue (named object joe).
-    When you write createEmployee("Frank").getName(), the temporary Employee returned by createEmployee is an rvalue (unnamed temporary that will die at the end of the full expression).
+    When we write joe.getName(), *this is lvalue (named object joe).
+    When we write createEmployee("Frank").getName(), the temporary Employee returned by createEmployee is an rvalue (unnamed temporary that will die at the end of the full expression).
 
     Ref-qualifiers (& vs &&) let us write different versions of the same function depending on whether *this is an lvalue or rvalue.
 
@@ -2616,7 +2616,7 @@ The reserve() member function can be used to reallocate a std::vector without ch
 
 std::vector<bool> is a specialization of std::vector that is optimized for space efficiency. Instead of storing each boolean value as a separate byte, std::vector<bool> uses a bitset-like structure to pack multiple boolean values into a single byte. This allows std::vector<bool> to use significantly less memory than a regular std::vector<bool> would.
 
-However, this optimization comes with some trade-offs. Because std::vector<bool> does not store each boolean value as a separate byte, it cannot provide direct access to individual boolean values. Instead, it provides a proxy object that allows you to read and write boolean values as if they were stored in a regular std::vector<bool>, but under the hood, it is actually manipulating bits within a byte.
+However, this optimization comes with some trade-offs. Because std::vector<bool> does not store each boolean value as a separate byte, it cannot provide direct access to individual boolean values. Instead, it provides a proxy object that allows we to read and write boolean values as if they were stored in a regular std::vector<bool>, but under the hood, it is actually manipulating bits within a byte.
 
 ```cpp
 
@@ -2842,7 +2842,7 @@ Correct way:
 
 Arrays can have elements of any object type. This includes objects with fundamental types (e.g. int) and objects with compound types (e.g. pointer to int).
 
-However, because references are not objects, you cannot make an array of references. The elements of an array must also be assignable, and references can’t be reseated.
+However, because references are not objects, we cannot make an array of references. The elements of an array must also be assignable, and references can’t be reseated.
 
 ```cpp
 #include <array>
@@ -2891,7 +2891,7 @@ int main()
 
 Note: The length of a C-style array must be a constant expression.
 
-Note: Zero-length C-style arrays are not allowed in standard C++. However, some compilers may allow them as an extension. If you need a zero-length array, you can use a std::array with a length of zero instead.
+Note: Zero-length C-style arrays are not allowed in standard C++. However, some compilers may allow them as an extension. If we need a zero-length array, we can use a std::array with a length of zero instead.
 
 ```cpp
 int main()
@@ -3001,14 +3001,14 @@ int main()
 
 ## Modifying C-style strings
 
-One important point to note is that C-style strings follow the same rules as C-style arrays. This means you can initialize the string upon creation, but you can not assign values to it using the assignment operator after that!
+One important point to note is that C-style strings follow the same rules as C-style arrays. This means we can initialize the string upon creation, but we can not assign values to it using the assignment operator after that!
 
 ```cpp
 char str[]{ "string" }; // ok
 str = "rope";           // not ok!
 ```
 
-Since C-style strings are arrays, you can use the [] operator to change individual characters in the string:
+Since C-style strings are arrays, we can use the [] operator to change individual characters in the string:
 
 ```cpp
 #include <iostream>
@@ -3026,7 +3026,7 @@ int main()
 
 ### Getting the length of an C-style string
 
-Because C-style strings are C-style arrays, you can use std::size() (or in C++20, std::ssize()) to get the length of the string as an array. There are two caveats here:
+Because C-style strings are C-style arrays, we can use std::size() (or in C++20, std::ssize()) to get the length of the string as an array. There are two caveats here:
 
 * This doesn’t work on decayed st ngs.
 * Returns the actual length of the C-style array, not the length of the string.
@@ -3485,11 +3485,11 @@ int main()
 
 Note: Not all algorithms support ranges yet, but more and more are being added with each new C++ standard.
 
-## Timing your code
+## Timing our code
 
-sometimes you’ll run across cases where you’re not sure whether one method or another will be more performant. So how do you tell?
+sometimes you’ll run across cases where you’re not sure whether one method or another will be more performant. So how do we tell?
 
-One easy way is to time your code to see how long it takes to run. C++11 comes with some functionality in the chrono library to do just that. However, using the chrono library is a bit arcane. The good news is that we can easily encapsulate all the timing functionality we need into a class that we can then use in our own programs.
+One easy way is to time our code to see how long it takes to run. C++11 comes with some functionality in the chrono library to do just that. However, using the chrono library is a bit arcane. The good news is that we can easily encapsulate all the timing functionality we need into a class that we can then use in our own programs.
 
 ```cpp
 #include <chrono> // for std::chrono functions
@@ -3602,7 +3602,7 @@ In the above case, we’re requesting an integer’s worth of memory from the op
 
 ### How does dynamic memory allocation work?
 
-When you dynamically allocate memory, you’re asking the operating system to reserve some of that memory for your program’s use. If it can fulfill this request, it will return the address of that memory to your application. From that point forward, your application can use this memory as it wishes. When your application is done with the memory, it can return the memory back to the operating system to be given to another program.
+When we dynamically allocate memory, you’re asking the operating system to reserve some of that memory for our program’s use. If it can fulfill this request, it will return the address of that memory to our application. From that point forward, our application can use this memory as it wishes. When our application is done with the memory, it can return the memory back to the operating system to be given to another program.
 
 ### Initializing a dynamically allocated variable
 
@@ -3650,7 +3650,7 @@ int main()
 
 Note: Operator new can fail to allocate memory, in which case it will throw a std::bad_alloc exception. If this exception isn’t properly handled (and it won’t be, since we haven’t covered exceptions or exception handling yet), the program will simply terminate (crash) with an unhandled exception error. 
 
-In many cases, having new throw an exception (or having your program crash) is undesirable, so there’s an alternate form of new that can be used instead to tell new to return a null pointer if memory can’t be allocated. This is done by adding the constant std::nothrow between the new keyword and the allocation type:
+In many cases, having new throw an exception (or having our program crash) is undesirable, so there’s an alternate form of new that can be used instead to tell new to return a null pointer if memory can’t be allocated. This is done by adding the constant std::nothrow between the new keyword and the allocation type:
 
 ```cpp
 #include <new> // for std::nothrow
@@ -3676,7 +3676,7 @@ int main()
 
 ### Memory leaks
 
-Memory leaks happen when your program loses the address of some bit of dynamically allocated memory before giving it back to the operating system. When this happens, your program can’t delete the dynamically allocated memory, because it no longer knows where it is. The operating system also can’t use this memory, because that memory is considered to be still in use by your program.
+Memory leaks happen when our program loses the address of some bit of dynamically allocated memory before giving it back to the operating system. When this happens, our program can’t delete the dynamically allocated memory, because it no longer knows where it is. The operating system also can’t use this memory, because that memory is considered to be still in use by our program.
 
 ## Dynamically allocating arrays
 
@@ -3706,7 +3706,7 @@ int main()
 
 We are allocating an array, C++ knows that it should use the array version of new instead of the scalar version of new. Essentially, the new[] operator is called, even though the [] isn’t placed next to the new keyword.
 
-Note: The length of dynamically allocated arrays has type std::size_t. If you are using a non-constexpr int, you’ll need to static_cast to std::size_t since that is considered a narrowing conversion and your compiler will warn otherwise.
+Note: The length of dynamically allocated arrays has type std::size_t. If we are using a non-constexpr int, you’ll need to static_cast to std::size_t since that is considered a narrowing conversion and our compiler will warn otherwise.
 
 ### Dynamically deleting arrays
 
@@ -3714,7 +3714,7 @@ When deleting a dynamically allocated array, we have to use the array version of
 
 How does array delete know how much memory to delete?
 
-When you use new[] to allocate an array, the implementation typically allocates a little extra memory to store the size of the array. This allows delete[] to know how many elements to destroy and how much memory to deallocate when you call it.
+When we use new[] to allocate an array, the implementation typically allocates a little extra memory to store the size of the array. This allows delete[] to know how many elements to destroy and how much memory to deallocate when we call it.
 
 ### Initializing dynamically allocated arrays
 
@@ -3989,7 +3989,7 @@ int main()
 
 One of the most useful things to do with function pointers is pass a function as an argument to another function. Functions used as arguments to another function are sometimes called callback functions.
 
-Consider a case where you are writing a function to perform a task (such as sorting an array), but you want the user to be able to define how a particular part of that task will be performed (such as whether the array is sorted in ascending or descending order). Let’s take a closer look at this problem as applied specifically to sorting, as an example that can be generalized to other similar problems.
+Consider a case where we are writing a function to perform a task (such as sorting an array), but we want the user to be able to define how a particular part of that task will be performed (such as whether the array is sorted in ascending or descending order). Let’s take a closer look at this problem as applied specifically to sorting, as an example that can be generalized to other similar problems.
 
 ```cpp
 
@@ -4222,7 +4222,7 @@ int main(){
 
 ### Type of a lambda
 
-1. Named lambdas: If you assign a lambda to a variable, the lambda will have the type of that variable. For example:
+1. Named lambdas: If we assign a lambda to a variable, the lambda will have the type of that variable. For example:
 
 ```cpp
 
@@ -4501,7 +4501,7 @@ int main()
 
 # Chapter 21: Operator Overloading
 
-In C++, operators are implemented as functions. By using function overloading on the operator functions, you can define your own versions of the operators that work with different data types (including classes that you’ve written). Using function overloading to overload operators is called operator overloading.
+In C++, operators are implemented as functions. By using function overloading on the operator functions, we can define our own versions of the operators that work with different data types (including classes that you’ve written). Using function overloading to overload operators is called operator overloading.
 
 ## Operators as functions
 
@@ -4510,13 +4510,13 @@ int x { 2 };
 int y { 3 };
 std::cout << x + y << '\n';
 ```
-When you see the expression x + y, you can translate this in your head to the function call operator+(x, y) (where operator+ is the name of the function).
+When we see the expression x + y, we can translate this in our head to the function call operator+(x, y) (where operator+ is the name of the function).
 
 ### Resolving overloaded operators
 
 * If all of the operands are fundamental data types, the compiler will call a built-in routine if one exists. If one does not exist, the compiler will produce a compiler error.
 
-* If any of the operands are program-defined types (e.g. one of your classes, or an enum type), the compiler will use the function overload resolution algorithm to see if there is an overloaded operator function that matches the operands. If there is a match, the compiler will call that function. This may involve implicitly converting one or more operands to match the parameter types of an overloaded operator. It may also involve implicitly converting program-defined types into fundamental types (via an overloaded typecast, which we’ll cover later in this chapter) so that it can match a built-in operator. If no match can be found (or an ambiguous match is found), the compiler will error.
+* If any of the operands are program-defined types (e.g. one of our classes, or an enum type), the compiler will use the function overload resolution algorithm to see if there is an overloaded operator function that matches the operands. If there is a match, the compiler will call that function. This may involve implicitly converting one or more operands to match the parameter types of an overloaded operator. It may also involve implicitly converting program-defined types into fundamental types (via an overloaded typecast, which we’ll cover later in this chapter) so that it can match a built-in operator. If no match can be found (or an ambiguous match is found), the compiler will error.
 
 ### Note: 
 
@@ -4642,7 +4642,7 @@ int main(){
 
 ### Overloading operator>>
 
-It is also possible to overload the input operator. This is done in a manner analogous to overloading the output operator. The key thing you need to know is that std::cin is an object of type std::istream. Here’s our Point class with an overloaded operator>> added:
+It is also possible to overload the input operator. This is done in a manner analogous to overloading the output operator. The key thing we need to know is that std::cin is an object of type std::istream. Here’s our Point class with an overloaded operator>> added:
 
 ```cpp
 #include <iostream>
@@ -4890,7 +4890,7 @@ Why operator[] returns a reference?
 
 Let’s take a closer look at how list[2] = 3 evaluates. Because the subscript operator has a higher precedence than the assignment operator, list[2] evaluates first. list[2] calls operator[], which we’ve defined to return a reference to list.m_list[2]. Because operator[] is returning a reference, it returns the actual list.m_list[2] array element. Our partially evaluated expression becomes list.m_list[2] = 3, which is a straightforward integer assignment.
 
-In lesson 12.2 -- Value categories (lvalues and rvalues), you learned that any value on the left hand side of an assignment statement must be an l-value (which is a variable that has an actual memory address). Because the result of operator[] can be used on the left hand side of an assignment (e.g. list[2] = 3), the return value of operator[] must be an l-value. As it turns out, references are always l-values, because you can only take a reference of variables that have memory addresses. So by returning a reference, the compiler is satisfied that we are returning an l-value. If we were to return by value instead, we would be returning a temporary value that does not have a memory address, which is an r-value. This would cause a compiler error when we try to use list[2] on the left hand side of an assignment, because we cannot assign to an r-value.
+In lesson 12.2 -- Value categories (lvalues and rvalues), we learned that any value on the left hand side of an assignment statement must be an l-value (which is a variable that has an actual memory address). Because the result of operator[] can be used on the left hand side of an assignment (e.g. list[2] = 3), the return value of operator[] must be an l-value. As it turns out, references are always l-values, because we can only take a reference of variables that have memory addresses. So by returning a reference, the compiler is satisfied that we are returning an l-value. If we were to return by value instead, we would be returning a temporary value that does not have a memory address, which is an r-value. This would cause a compiler error when we try to use list[2] on the left hand side of an assignment, because we cannot assign to an r-value.
 
 Note:
 ![alt text](image-71.png)
@@ -4959,7 +4959,7 @@ int main()
 
 ## Shallow vs Deep Copy
 
-C++ does not know much about your class, the default copy constructor and default assignment operators it provides use a copying method known as a memberwise copy (also known as a shallow copy). This means that C++ copies each member of the class individually (using the assignment operator for overloaded operator=, and direct initialization for the copy constructor). When classes are simple (e.g. do not contain any dynamically allocated memory), this works very well.
+C++ does not know much about our class, the default copy constructor and default assignment operators it provides use a copying method known as a memberwise copy (also known as a shallow copy). This means that C++ copies each member of the class individually (using the assignment operator for overloaded operator=, and direct initialization for the copy constructor). When classes are simple (e.g. do not contain any dynamically allocated memory), this works very well.
 
 ex:
 
@@ -5003,7 +5003,7 @@ int main()
 
 ### Deep copying
 
-A deep copy is a copying method that creates a new copy of any dynamically allocated memory (or other resources) that the class manages. This is typically done by writing your own copy constructor and copy assignment operator that perform a deep copy of the class’s resources.
+A deep copy is a copying method that creates a new copy of any dynamically allocated memory (or other resources) that the class manages. This is typically done by writing our own copy constructor and copy assignment operator that perform a deep copy of the class’s resources.
 
 ```cpp
 
@@ -5071,7 +5071,7 @@ int main()
 
 ### The rule of three:-
 
-If your class needs a user-defined destructor, copy constructor, or copy assignment operator, then it almost certainly needs all three. This is because if your class manages a resource (e.g. dynamically allocated memory), you need to make sure that the resource is properly copied and cleaned up in all cases (copying, assignment, and destruction). If you only define one or two of these functions, you may end up with issues such as memory leaks, double deletions, or shallow copies that lead to undefined behavior. Therefore, it’s generally recommended to follow the rule of three and define all three of these functions if your class manages a resource.
+If our class needs a user-defined destructor, copy constructor, or copy assignment operator, then it almost certainly needs all three. This is because if our class manages a resource (e.g. dynamically allocated memory), we need to make sure that the resource is properly copied and cleaned up in all cases (copying, assignment, and destruction). If we only define one or two of these functions, we may end up with issues such as memory leaks, double deletions, or shallow copies that lead to undefined behavior. Therefore, it’s generally recommended to follow the rule of three and define all three of these functions if our class manages a resource.
 
 ## Overloading operators and function templates
 
@@ -5119,8 +5119,278 @@ The larger amount is: 8 cents
 
 # Chapter 22 : Move Semantics and Smart Pointers
 
+## Let's start with a simple class that manages a resource (e.g. dynamically allocated memory):
+
+One of the best things about classes is that they contain destructors that automatically get executed when an object of the class goes out of scope. So if we allocate (or acquire) memory in our constructor, we can deallocate it in our destructor, and be guaranteed that the memory will be deallocated when the class object is destroyed.
+
+Consider a class whose sole job was to hold and “own” a pointer passed to it, and then deallocate that pointer when the class object went out of scope. As long as objects of that class were only created as local variables, we could guarantee that the class would properly go out of scope (regardless of when or how our functions terminate) and the owned pointer would get destroyed.
+
+```cpp
+#include <iostream>
+
+template<typename T>
+class AutoPtr{
+private:
+    T* m_ptr; // pointer to a dynamically allocated resource
+public:
+    AutoPtr(T* ptr) : m_ptr{ ptr } {} // constructor that takes ownership of the pointer
+
+    ~AutoPtr() { delete m_ptr; } // destructor that deallocates the owned pointer
+
+    T* get() const { return m_ptr; } // getter function to access the owned pointer
+};
+
+Class Resource{
+public:
+    Resource() { std::cout << "Resource acquired\n"; }
+    ~Resource() { std::cout << "Resource destroyed\n"; }
+};
+
+int main()
+{
+    AutoPtr<Resource> autoPtr{ new Resource() }; // create a AutoPtr object that owns a new Resource
+    std::cout << "Doing some work with the resource...\n";
+    return 0; // when main returns, autoPtr goes out of scope and its destructor is called, which deletes the owned Resource and prints "Resource destroyed"
+}
+```
+
+A Smart pointer is a composition class that is designed to manage dynamically allocated memory and ensure that memory gets deleted when the smart pointer object goes out of scope.
+
+Above, class AutoPtr has a critical flaw: it does not have a copy constructor or copy assignment operator. This means that if we try to copy an AutoPtr object, we will end up with two AutoPtr objects that both think they own the same pointer. When both AutoPtr objects go out of scope, they will both try to delete the same pointer, which will lead to undefined behavior (e.g. double deletion). To fix this, we need to define a copy constructor and copy assignment operator that properly handle ownership of the pointer (e.g. by implementing move semantics or by deleting the copy constructor and copy assignment operator to prevent copying altogether). Remember the rule of three: if our class needs a user-defined destructor, copy constructor, or copy assignment operator, then it almost certainly needs all three. In this case, since we have a user-defined destructor that deletes the owned pointer, we also need to define a copy constructor and copy assignment operator to properly manage ownership of the pointer when copying AutoPtr objects.
+
+Before jumping there why do we need move semantics?
+
+Well, one thing we could do would be to explicitly define and delete the copy constructor and assignment operator, thereby preventing any copies from being made in the first place. That would prevent the pass by value case (which is good, we probably shouldn’t be passing these by value anyway). But then how would we return an Auto_ptr1 from a function back to the caller?
+
+```cpp
+??? generateResource()
+{
+     Resource* r{ new Resource() };
+     return Auto_ptr1(r);
+}
+```
+
+We can’t return our Auto_ptr1 by reference, because the local Auto_ptr1 will be destroyed at the end of the function, and the caller will be left with a dangling reference. We could return pointer r as Resource*, but then we might forget to delete r later, which is the whole point of using smart pointers in the first place. So that’s out. Returning the Auto_ptr1 by value is the only option that makes sense -- but then we end up with shallow copies, duplicated pointers, and crashes.
+
+```cpp
+Resource* generateResource()
+{
+     Resource* r{ new Resource() };
+     return r; // we can return the raw pointer, but then we have to remember to delete it later, which is error-prone
+}
+```
+
+Another option would be to overload the copy constructor and assignment operator to make deep copies. In this way, we’d at least guarantee to avoid duplicate pointers to the same object. But copying can be expensive (and may not be desirable or even possible), and we don’t want to make needless copies of objects just to return an Auto_ptr1 from a function. Plus assigning or initializing a dumb pointer doesn’t copy the object being pointed to, so why would we expect smart pointers to behave differently? This is where move semantics come in. 
+
+## Move Semantics
+
+What if, instead of having our copy constructor and assignment operator copy the pointer (“copy semantics”), we instead transfer/move ownership of the pointer from the source to the destination object? This is the idea behind move semantics. With move semantics, instead of copying the pointer, we “move” the pointer from the source object to the destination object. This means that after the move, the source object no longer owns the pointer (it becomes a “moved-from” object), and the destination object now owns the pointer. This allows us to return smart pointers from functions without having to make expensive copies, and it also allows us to avoid issues with duplicate pointers and double deletion.
+
+let's update our AutoPtr class to support move semantics:
+
+```cpp
+#include <iostream>
+
+template<typename T>
+class AutoPtr{
+private:
+    T* m_ptr; // pointer to a dynamically allocated resource
+public:
+    AutoPtr(T* ptr = nullptr) : m_ptr{ ptr } {} // constructor that takes ownership of the pointer
+
+    ~AutoPtr() { delete m_ptr; } // destructor that deallocates the owned pointer
+
+    // A copy constructor that implements move semantics
+    AutoPtr(AutoPtr& other){ // note that the parameter is a non-const lvalue reference, which allows us to modify the source object (e.g. by setting its pointer to null)
+        // We don't need to delete m_ptr here.  This constructor is only called when we're creating a new object, and m_ptr can't be set prior to this.
+        m_ptr = other.m_ptr; // transfer our dumb pointer from the source to our local object
+        other.m_ptr = nullptr; // set the source's pointer to null to indicate that it no longer owns the resource
+    }
 
 
+    // An assignment operator that implements move semantics
+    AutoPtr& operator=(AutoPtr& other) // note that the parameter is a non-const lvalue reference, which allows us to modify the source object (e.g. by setting its pointer to null)
+    {
+        if(this == &other){
+            return *this; // check for self-assignment and do nothing if we're trying to assign the same object to itself
+        }
+        delete m_ptr; // delete the current resource that we own (if any) to avoid memory leaks
+        m_ptr = other.m_ptr; // transfer our dumb pointer from the source to our local object
+        other.m_ptr = nullptr; // set the source's pointer to null to indicate that it no longer owns the resource
+        return *this; // return the current object to allow chaining of assignment operations
+    }
+
+    bool isNull() const { return m_ptr == nullptr; } // helper function to check if the AutoPtr is null (i.e. does not own a resource)
+};
+
+class Resource{
+public:
+    Resource() { std::cout << "Resource acquired\n"; }
+    ~Resource() { std::cout << "Resource destroyed\n"; }
+};
+
+int main()
+{
+    AutoPtr<Resource> autoPtr1{ new Resource() }; // create a AutoPtr object that owns a new Resource
+    AutoPtr<Resource> autoPtr2; // create a default AutoPtr object that does not own any resource
+
+    std::cout << "autoPtr1 is " << (autoPtr1.isNull() ? "null" : "not null") << '\n'; // prints "not null"
+    std::cout << "autoPtr2 is " << (autoPtr2.isNull() ? "null" : "not null") << '\n'; // prints "null" 
+    
+    // Move ownership of the resource from autoPtr1 to autoPtr2 using the move assignment operator
+    autoPtr2 = autoPtr1; // calls the move assignment operator to transfer ownership of the resource from autoPtr1 to autoPtr2
+
+    std::cout << "After move assignment:\n";
+    std::cout << "autoPtr1 is " << (autoPtr1.isNull() ? "null" : "not null") << '\n'; // prints "null" (autoPtr1 no longer owns the resource)
+    std::cout << "autoPtr2 is " << (autoPtr2.isNull() ? "null" : "not null") << '\n'; // prints "not null" (autoPtr2 now owns the resource)
+
+}
+
+// output will be:
+Resource acquired
+autoPtr1 is not null
+autoPtr2 is null
+After move assignment:
+autoPtr1 is null
+autoPtr2 is not null
+Resource destroyed
+```
+
+Note: std::auto_ptr is implemented like the above AutoPtr class, and it is deprecated in C++11 and removed in C++17 due to its flawed copy semantics (it implements move semantics in the copy constructor and copy assignment operator, which can lead to issues with ownership and double deletion). 
+
+Reason why std::auto_ptr is deprecated and removed in C++11 and C++17:
+
+1. First, because std::auto_ptr implements move semantics through the copy constructor and assignment operator, passing a std::auto_ptr by value to a function will cause our resource to get moved to the function parameter (and be destroyed at the end of the function when the function parameters go out of scope). Then when we go to access our auto_ptr argument from the caller (not realizing it was transferred and deleted), you’re suddenly dereferencing a null pointer. Crash!
+
+2. Second,  std::auto_ptr always deletes its contents using non-array delete. This means that if we create a std::auto_ptr to an array (e.g. std::auto_ptr<int[]>), the destructor will call delete on the pointer, which is undefined behavior because we need to use delete[] to delete arrays allocated with new[]. This can lead to memory leaks and other issues. 
+
+3. Finally, auto_ptr doesn’t play nice with a lot of the other classes in the standard library, including most of the containers and algorithms. This occurs because those standard library classes assume that when they copy an item, it actually makes a copy, not a move.
+
+## Before moving on, let's revise R-value references
+
+* L-value references recap
+
+An l-value reference is a reference that can bind to an l-value (i.e. an object that has a name and a memory address). L-value references are declared using the & symbol. For example:
+
+```cpp
+int x = 5; // x is an l-value (it has a name and a memory address)
+int& ref = x; // ref is an l-value reference that binds to x
+```
+
+L-value reference         | Can be initialized with	    | Can modify
+--------------------------|-----------------------------|----------------
+Modifiable l-values	      | Yes	                        | Yes
+Non-modifiable l-values	  | Yes	                        | No
+R-values	              | No	                        | No
+
+1. Modifiable l-values are variables that can be modified (e.g. int x = 5;). L-value references can bind to modifiable l-values and can modify them through the reference.
+2. Non-modifiable l-values are variables that cannot be modified (e.g. const int x = 5;). L-value references can bind to non-modifiable l-values, but they cannot modify them through the reference (e.g. int& ref = x; would be a compile error because x is const).
+3. R-values are temporary values that do not have a name or a memory address (e.g. 5, x + 1). L-value references cannot bind to r-values because they require an l-value (something with a name and a memory address) to bind to. If we try to bind an l-value reference to an r-value (e.g. int& ref = 5;), we will get a compile error because 5 is an r-value and cannot be bound to an l-value reference.
+
+* L value reference to const recap
+
+A const l-value reference is a reference that can bind to an l-value, but cannot modify the object it binds to. Const l-value references are declared using the const keyword before the & symbol. For example:
+
+```cpp
+int x = 5; // x is an l-value (it has a name and a memory address)
+const int& ref = x; // ref is a const l-value reference that binds to x
+```
+
+l-value reference to const	| Can be initialized with	    | Can modify
+--------------------------|-----------------------------|----------------
+Modifiable l-values	      | Yes	                        | No
+Non-modifiable l-values	  | Yes	                        | No
+R-values	              | No	                        | No
 
 
+* R-value references recap
+
+C++11 adds a new type of reference called an r-value reference. An r-value reference is a reference that is designed to be initialized with an r-value (only). While an l-value reference is created using a single ampersand, an r-value reference is created using a double ampersand:
+
+```cpp
+int&& rref = 5; // rref is an r-value reference that binds to the r-value 5
+rref = x + 1; // rref can also bind to the r-value result of the expression x + 1
+```
+
+R-value reference	        | Can be initialized with	    | Can modify
+--------------------------|-----------------------------|----------------
+Modifiable l-values	      | No	                        | No
+Non-modifiable l-values	  | No	                        | No
+R-values	              | Yes	                        | Yes
+
+R-value reference to const	| Can be initialized with	    | Can modify
+--------------------------|-----------------------------|----------------
+Modifiable l-values	      | No	                        | No     
+Non-modifiable l-values	  | No	                        | No
+R-values	              | Yes	                        | No
+
+R-value references have two properties that are useful. First, r-value references extend the lifespan of the object they are initialized with to the lifespan of the r-value reference (l-value references to const objects can do this too). Second, non-const r-value references allow we to modify the r-value!
+```cpp
+#include <iostream>
+
+class Fraction
+{
+private:
+	int m_numerator { 0 };
+	int m_denominator { 1 };
+
+public:
+	Fraction(int numerator = 0, int denominator = 1) :
+		m_numerator{ numerator }, m_denominator{ denominator }
+	{
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+	{
+		out << f1.m_numerator << '/' << f1.m_denominator;
+		return out;
+	}
+};
+
+int main()
+{
+	auto&& rref{ Fraction{ 3, 5 } }; // r-value reference to temporary Fraction
+
+	// f1 of operator<< binds to the temporary, no copies are created.
+	std::cout << rref << '\n';
+
+	return 0;
+} // rref (and the temporary Fraction) goes out of scope here
+```
+
+### R-value references as function parameters
+
+```cpp
+#include <iostream>
+
+void fun(const int& lref) // l-value arguments will select this function
+{
+	std::cout << "l-value reference to const: " << lref << '\n';
+}
+
+void fun(int&& rref) // r-value arguments will select this function
+{
+	std::cout << "r-value reference: " << rref << '\n';
+}
+
+int main()
+{
+	int x{ 5 };
+	fun(x); // l-value argument calls l-value version of function
+	fun(5); // r-value argument calls r-value version of function
+
+	return 0;
+}
+```
+
+### Rvalue reference variables are lvalues
+
+```cpp
+int&& ref{ 5 };
+fun(ref);
+```
+
+Which version of fun would we expect the above to call: fun(const int&) or fun(int&&)?
+The answer might surprise we. This calls fun(const int&).
+Although variable ref has type int&&, when used in an expression it is an lvalue (as are all named variables). The type of an object and its value category are independent.
 
