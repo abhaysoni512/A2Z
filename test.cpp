@@ -1,54 +1,31 @@
 #include <iostream>
+#include <memory>
 
-class Fraction
+class Resource2; // forward declaration of Resource2
+
+class Resource1
 {
-private:
-    int m_numerator;
-    int m_denominator;
-
 public:
-    // Default constructor
-    Fraction(int numerator = 0, int denominator = 1) : m_numerator{numerator}, m_denominator{denominator} {}
-
-    // Copy constructor
-    Fraction(const Fraction &other) : m_numerator{other.m_numerator}, m_denominator{other.m_denominator}
-    {
-        std::cout << "Copy constructor called\n";
-    }
-
-    // Copy assignment operator
-    Fraction &operator=(const Fraction &other);
-
-    friend std::ostream &operator<<(std::ostream &out, const Fraction &f);
+    std::shared_ptr<Resource2> m_ptr2; // shared_ptr to Resource2
+    Resource1() { std::cout << "Resource1 acquired\n"; }
+    ~Resource1() { std::cout << "Resource1 destroyed\n"; }
 };
-std::ostream &operator<<(std::ostream &out, const Fraction &f)
-{
-    out << f.m_numerator << '/' << f.m_denominator;
-    return out;
-}
 
-Fraction &Fraction::operator=(const Fraction &other)
+class Resource2
 {
-    std::cout << "Copy assignment operator called\n";
-    if (this == &other)
-    {                 // check for self-assignment
-        return *this; // return the current object to allow chaining of assignment operations
-    }
-    m_numerator = other.m_numerator;     // copy the numerator from the other object
-    m_denominator = other.m_denominator; // copy the denominator from the other object
-    return *this;                        // return the current object to allow chaining of assignment operations
-}
+public:
+    std::weak_ptr<Resource1> m_ptr1; // weak_ptr to Resource1
+    Resource2() { std::cout << "Resource2 acquired\n"; }
+    ~Resource2() { std::cout << "Resource2 destroyed\n"; }
+};
 
 int main()
 {
-    Fraction f1{5, 3};
-    Fraction f2{7, 2};
-    Fraction f3{9, 5};
+    std::shared_ptr<Resource1> p1{new Resource1}; // create a shared_ptr to Resource1
+    std::shared_ptr<Resource2> p2{new Resource2}; // create a shared_ptr to Resource2
 
-    f1 = f2 = f3; // chained assignment
+    p1->m_ptr2 = p2; // p1's m_ptr2 is a shared_ptr to p2, so Resource1 has a shared_ptr to Resource2
+    p2->m_ptr1 = p1; // p2's m_ptr1 is a weak_ptr to p1, so Resource2 has a weak_ptr to Resource1, breaking the circular reference
 
     return 0;
 }
-
-
-
