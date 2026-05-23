@@ -5120,7 +5120,7 @@ The larger amount is: 8 cents
 
 # Chapter 22 : Move Semantics and Smart Pointers
 
-## Let's start with a simple class that manages a resource (e.g. dynamically allocated memory):
+### Let's start with a simple class that manages a resource (e.g. dynamically allocated memory):
 
 One of the best things about classes is that they contain destructors that automatically get executed when an object of the class goes out of scope. So if we allocate (or acquire) memory in our constructor, we can deallocate it in our destructor, and be guaranteed that the memory will be deallocated when the class object is destroyed.
 
@@ -5267,7 +5267,7 @@ Reason why std::auto_ptr is deprecated and removed in C++11 and C++17:
 
 3. Finally, auto_ptr doesn’t play nice with a lot of the other classes in the standard library, including most of the containers and algorithms. This occurs because those standard library classes assume that when they copy an item, it actually makes a copy, not a move.
 
-## Before moving on, let's revise R-value references
+### Before moving on, let's revise R-value references
 
 * L-value references recap
 
@@ -5747,7 +5747,7 @@ int main(){
     * ptr1 use count: 1
     * Killing the last shared pointer
 
-## std::make_shared :-
+### std::make_shared :-
 
 std::make_unique() can be used to create a std::unique_ptr in C++14, std::make_shared() can (and should) be used to make a std::shared_ptr. std::make_shared() is available in C++11.
 
@@ -5840,13 +5840,13 @@ int main()
 4. We set p2's m_ptr1 to point to p1, so now Resource2 has a shared_ptr to Resource1, reference count for the Resource1 object is now 2
 5. When main() returns, p1 & p2 go out of scope refernce count for both Resource1 and Resource2 objects is decremented by 1, but since both objects still have a reference count of 1 (due to the circular reference), neither object is destroyed, leading to a memory leak. This is where std::weak_ptr comes in to break the circular reference and allow proper cleanup of resources.
 
-## Using std::weak_ptr to break circular references
+### Using std::weak_ptr to break circular references
 
 A std::weak_ptr is an observer -- it can observe and access the same object as a std::shared_ptr (or other std::weak_ptrs) but it is not considered an owner of the object. A std::weak_ptr does not contribute to the reference count of the object it observes, so it does not prevent the object from being destroyed when the last std::shared_ptr owning it is destroyed. This makes std::weak_ptr useful for breaking circular references between std::shared_ptr instances.
 
-# Understanding `shared_ptr` and `weak_ptr` Circular Reference Problem
+### Understanding `shared_ptr` and `weak_ptr` Circular Reference Problem
 
-## Code
+* Code
 
 ```cpp
 #include <iostream>
@@ -5886,7 +5886,7 @@ int main()
 
 ---
 
-# Output
+* Output
 
 ```text
 Resource1 acquired
@@ -5897,9 +5897,9 @@ Resource2 destroyed
 
 ---
 
-# Step-by-Step Deep Explanation
+* Step-by-Step Deep Explanation
 
-## Step 1: Create `p1`
+* Step 1: Create `p1`
 
 ```cpp
 std::shared_ptr<Resource1> p1{ new Resource1 };
@@ -5920,7 +5920,7 @@ Because only `p1` owns it.
 
 ---
 
-## Step 2: Create `p2`
+* Step 2: Create `p2`
 
 ```cpp
 std::shared_ptr<Resource2> p2{ new Resource2 };
@@ -5937,7 +5937,7 @@ Reference count of `Resource2`:
 
 ---
 
-# Current Situation
+* Current Situation
 
 ```text
 p1 ---> Resource1
@@ -5954,7 +5954,7 @@ Resource2 = 1
 
 ---
 
-## Step 3: Assign `p2` to `m_ptr2`
+* Step 3: Assign `p2` to `m_ptr2`
 
 ```cpp
 p1->m_ptr2 = p2;
@@ -5982,7 +5982,7 @@ So reference count of `Resource2` becomes:
 
 ---
 
-# Current Structure
+* Current Structure
 
 ```text
 p1 ---> Resource1 ----> Resource2 <--- p2
@@ -5997,7 +5997,7 @@ Resource2 = 2
 
 ---
 
-## Step 4: Assign `p1` to `m_ptr1`
+* Step 4: Assign `p1` to `m_ptr1`
 
 ```cpp
 p2->m_ptr1 = p1;
@@ -6023,7 +6023,7 @@ So reference count of `Resource1` remains:
 
 ---
 
-# Final Structure
+* Final Structure
 
 ```text
                 weak_ptr
@@ -6042,7 +6042,7 @@ Resource2 = 2
 
 ---
 
-# Why `weak_ptr` Solves the Problem
+* Why `weak_ptr` Solves the Problem
 
 If `m_ptr1` had also been a `shared_ptr`:
 
@@ -6071,13 +6071,13 @@ This causes a memory leak.
 
 ---
 
-# What Happens When `main()` Ends
+* What Happens When `main()` Ends
 
 Local variables are destroyed in reverse order.
 
 So:
 
-## First `p2` is destroyed
+* First `p2` is destroyed
 
 Reference count of `Resource2`:
 
@@ -6093,7 +6093,7 @@ So `Resource2` is NOT destroyed yet.
 
 ---
 
-## Then `p1` is destroyed
+* Then `p1` is destroyed
 
 Reference count of `Resource1`:
 
@@ -6111,7 +6111,7 @@ Resource1 destroyed
 
 ---
 
-# Important Internal Detail
+* Important Internal Detail
 
 During destruction of `Resource1`:
 
@@ -6139,7 +6139,7 @@ Resource2 destroyed
 
 ---
 
-# Final Destruction Flow
+* Final Destruction Flow
 
 ```text
 p2 destroyed
@@ -6154,3 +6154,4 @@ Resource2 count: 1 -> 0
 Resource2 destroyed
 ```
 
+# Chapter 23
