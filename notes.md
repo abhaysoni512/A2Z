@@ -3,10 +3,11 @@ Source : learncpp.com
 # Chapter 7 
 
 ## Local variables 
-scope determines where an identifier can be accessed within the source code. When an identifier can not be accessed, we say it is out of scope. Scope is a compile-time property, and trying to use an identifier when it is out of scope will result in a compile error.
 
-* Linkage 
-An identifier’s linkage determines whether a declaration of that same identifier in a different scope refers to the same object (or function). Local variables have no linkage. Each declaration of an identifier with no linkage refers to a unique object or function.
+* Scope : Scope is the region of the program where an identifier can be used. An identifier is said to be in scope from its point of declaration to the end of the block in which it is declared.
+Scope is a compile-time property, and trying to use an identifier when it is out of scope will result in a compile error.
+
+* Linkage : Linkage determines if multiple declarations of an identifier refer to the same identifier or not. Local variables have no linkage, meaning each declaration refers to a unique object.
 
 ```cpp
     int main()
@@ -5393,4 +5394,763 @@ fun(ref);
 Which version of fun would we expect the above to call: fun(const int&) or fun(int&&)?
 The answer might surprise we. This calls fun(const int&).
 Although variable ref has type int&&, when used in an expression it is an lvalue (as are all named variables). The type of an object and its value category are independent.
+
+## Move Constructors and Move Assignment Operators
+
+```cpp
+
+#include <iostream>
+template<typename T>
+class AutoPtr{
+private:
+    T* m_ptr; // pointer to a dynamically allocated resource
+public:
+    AutoPtr(T* ptr = nullptr) : m_ptr{ ptr } {} // constructor that takes ownership of the pointer
+
+    ~AutoPtr() { delete m_ptr; } // destructor that deallocates the owned pointer
+
+    // Copy constructor
+    AutoPtr(const AutoPtr& other) {
+        m_ptr = new T;
+        *m_ptr = *(other.m_ptr); // copy the resource from the other object
+    }
+
+    // Move constructor
+    // r-value reference parameter to indicate that this constructor is for move semantics, and noexcept to indicate that this constructor does not throw exceptions, why noexcept? Because move constructors and move assignment operators should not throw exceptions, as they are often used in situations where we want to avoid the overhead of copying (e.g. when returning a smart pointer from a function). If a move constructor or move assignment operator were to throw an exception, it could lead to resource leaks and other issues, as the object being moved from may have already released its resources before the exception is thrown. By marking the move constructor and move assignment operator as noexcept, we are indicating to the compiler and to other developers that these functions will not throw exceptions, which allows for better optimization and safer code.
+    AutoPtr(AutoPtr&& other) noexcept 
+                            : m_ptr{ other.m_ptr }
+    {
+        other.m_ptr = nullptr; // set the source's pointer to null to indicate that it no longer owns the resource
+    }
+
+    // Copy assignment operator
+    AutoPtr& operator=(const AutoPtr& other) {
+        if(this == &other){
+            return *this; // check for self-assignment and do nothing if we're trying to assign the same object to itself
+        }
+        delete m_ptr; // delete the current resource that we own (if any) to avoid memory leaks
+        m_ptr = new T;
+        *m_ptr = *(other.m_ptr); // copy the resource from the other object
+        return *this; // return the current object to allow chaining of assignment operations
+    }
+
+    // Move assignment operator
+    // r-value reference parameter to indicate that this operator is for move semantics, and noexcept to indicate that this operator does not throw exceptions
+    AutoPtr& operator=(AutoPtr&& other) noexcept {
+        if(this == &other){
+            return *this; // check for self-assignment and do nothing if we're trying to assign the same object to itself
+        }
+        delete m_ptr; // delete the current resource that we own (if any) to avoid memory leaks
+        m_ptr = other.m_ptr; // transfer ownership of the resource from the source to the destination object
+        other.m_ptr = nullptr; // set the source's pointer to null to indicate that it no longer owns the resource
+        return *this; // return the current object to allow
+    }
+
+    bool isNull() const { return m_ptr == nullptr; } // helper function to check if the AutoPtr is null (i.e. does not own a resource)
+};
+class Resource
+{
+public:
+	Resource() { std::cout << "Resource acquired\n"; }
+	~Resource() { std::cout << "Resource destroyed\n"; }
+};
+
+Auto_ptr4<Resource> generateResource()
+{
+	Auto_ptr4<Resource> res{new Resource};
+	return res; // this return value will invoke the move constructor
+}
+
+int main()
+{
+	Auto_ptr4<Resource> mainres;
+	mainres = generateResource(); // this assignment will invoke the move assignment
+
+	return 0;
+}
+```
+* Output will be:
+    Resource acquired
+    Resource destroyed
+
+* Flow of the above code:
+1. Inside generateResource(), local variable res is created and initialized with a dynamically allocated Resource, which causes the first “Resource acquired”.
+2. Res is returned back to main() by value. Res is move constructed into a temporary object, transferring the dynamically created object stored in res to the temporary object. We’ll talk about why this happens below.
+3. Res goes out of scope. Because res no longer manages a pointer (it was moved to the temporary), nothing interesting happens here.
+4. The temporary object is move assigned to mainres. This transfers the dynamically created object stored in the temporary to mainres.
+5. The assignment expression ends, and the temporary object goes out of expression scope and is destroyed. However, because the temporary no longer manages a pointer (it was moved to mainres), nothing interesting happens here either.
+6. At the end of main(), mainres goes out of scope, and our final “Resource destroyed” is displayed.
+
+* Note:-
+The rule of five says that if the copy constructor, copy assignment, move constructor, move assignment, or destructor are defined or deleted, then each of those functions should be defined or deleted. This is because if we define or delete one of these functions, we likely need to define or delete the others to properly manage the resources that our class owns. For example, if we define a destructor to clean up a resource, we should also define a copy constructor and copy assignment operator to ensure that the resource is properly copied when our class is copied. Similarly, if we define a move constructor and move assignment operator to take advantage of move semantics, we should also define a destructor to clean up the resource when our class goes out of scope. By following the rule of five, we can ensure that our class properly manages its resources and avoids issues such as memory leaks and double deletion.
+
+* std::move
+
+In C++11, std::move is a standard library function that casts (using static_cast) its argument into an r-value reference, so that move semantics can be invoked. Thus, we can use std::move to cast an l-value into a type that will prefer being moved over being copied. std::move is defined in the utility header.
+
+Here’s the same program as above, but with a mySwapMove() function that uses std::move to convert our l-values into r-values so we can invoke move semantics:
+
+```cpp
+#include <iostream>
+#include <string>
+#include <utility> // for std::move
+
+template <typename T>
+void mySwapMove(T& a, T& b)
+{
+	T tmp { std::move(a) }; // invokes move constructor
+	a = std::move(b); // invokes move assignment
+	b = std::move(tmp); // invokes move assignment
+}
+
+int main()
+{
+	std::string x{ "abc" };
+	std::string y{ "de" };
+
+	std::cout << "x: " << x << '\n';
+	std::cout << "y: " << y << '\n';
+
+	mySwapMove(x, y);
+
+	std::cout << "x: " << x << '\n';
+	std::cout << "y: " << y << '\n';
+
+	return 0;
+}
+
+output will be:
+x: abc
+y: de
+x: de
+y: abc
+```
+* Note:
+
+    the defining characteristic of a smart pointer is that it manages a dynamically allocated resource provided by the user of the smart pointer, and ensures the dynamically allocated object is properly cleaned up at the appropriate time (usually when the smart pointer goes out of scope).
+
+## std::unique_ptr
+
+Unique_ptr is a smart pointer that owns and manages another object which is dynamically created through a pointer and disposes of that object when the unique_ptr goes out of scope. No two unique_ptr instances can manage the same object, and the object is destroyed when the unique_ptr goes out of scope. Unique_ptr is defined in the memory header.
+
+```cpp
+
+#include <iostream>
+#include <memory> // for std::unique_ptr
+
+class Resource
+{
+public:
+    Resource() { std::cout << "Resource acquired\n"; }
+    ~Resource() { std::cout << "Resource destroyed\n"; }
+};
+
+int main(){
+    std::unique_ptr<Resource> res1{ new Resource }; // create a unique_ptr that owns a new Resource
+    std::unique_ptr<Resource> res2; // create an empty unique_ptr that does not own any resource
+
+    std::cout << "res1 is " << (res1 ? "not null" : "null") << '\n'; // prints "null" (res1 no longer owns the resource)
+    std::cout << "res2 is " << (res2 ? "not null" : "null") << '\n'; // prints "not null" (res2 now owns the resource)
+
+    // // res2 = res1; // Won't compile: copy assignment is disabled
+    // Move ownership of the resource from res1 to res2 using std::move
+    res2 = std::move(res1); // calls the move assignment operator to transfer ownership of the resource from res1 to res2
+
+    std::cout << "res1 is " << (res1 ? "not null" : "null") << '\n'; // prints "null" (res1 no longer owns the resource)
+    std::cout << "res2 is " << (res2 ? "not null" : "null") << '\n'; // prints "not null" (res2 now owns the resource)
+
+    return 0;
+}
+```
+* output will be:
+
+    * Resource acquired
+    * res1 is not null
+    * res2 is null
+    * res1 is null
+    * res2 is not null
+    * Resource destroyed
+
+Remember that std::unique_ptr may not always be managing an object -- either because it was created empty (using the default constructor or passing in a nullptr as the parameter), or because the resource it was managing got moved to another std::unique_ptr. So before we use either of these operators, we should check whether the std::unique_ptr actually has a resource. Fortunately, this is easy: std::unique_ptr has a cast to bool that returns true if the std::unique_ptr is managing a resource.
+
+### operator overloading with unique_ptr
+
+```cpp
+#include <iostream>
+#include <memory>
+
+using namespace std;
+class Resource{
+public:
+    Resource(){
+        cout << "Resource acquired\n";
+    }
+    ~Resource(){
+        cout << "Resource destroyed\n";
+    }
+};
+// Overload the << operator for the Resource class to allow us to print a message when we dereference a unique_ptr to a Resource
+// Working 
+ostream& operator<<(ostream& out, const Resource& r){
+    out << "I am a resource";
+    return out;
+}
+
+
+int main(){
+    unique_ptr<Resource> res{ new Resource }; // create a unique_ptr that owns a new Resource
+    cout<<*res<<endl; // dereference the unique_ptr to access the Resource object it manages
+    // *res as unique_ptr class has an overloaded operator* that returns a reference to the object it manages, so we can use *res to access the Resource object and print a message using the overloaded << operator for the Resource class
+}
+
+```
+* output will be:
+
+    * Resource acquired
+    * I am a resource
+    * Resource destroyed
+
+### std::make_unique
+
+C++ 14 adds a new function template called std::make_unique that provides a convenient and safe way to create std::unique_ptr instances. std::make_unique takes care of creating the object and managing the memory, so we don't have to worry about manually using new and delete. std::make_unique is defined in the memory header.
+
+```cpp
+#include <iostream>
+#include <memory> // for std::make_unique
+
+class Resource
+{
+public:
+    Resource() { std::cout << "Resource acquired\n"; }
+    ~Resource() { std::cout << "Resource destroyed\n"; }
+};
+
+int main(){
+    std::unique_ptr<Resource> res1 = std::make_unique<Resource>(); // create a unique_ptr that owns a new Resource using std::make_unique
+    // or 
+    // auto res1 = std::make_unique<Resource>(); // using auto to let the compiler deduce the type of res1
+    return 0;
+}
+```
+* output will be:
+    * Resource acquired
+    * Resource destroyed
+
+### std::unique_ptr and classes (Advanced)
+
+Using std::unique_ptr as a member variable in a class is a common way to manage dynamically allocated resources within a class. When we use std::unique_ptr as a member variable, we can take advantage of its automatic memory management to ensure that the resource is properly cleaned up when the class object goes out of scope. This can help prevent memory leaks and other issues related to manual memory management.
+
+However, if the class object is not destroyed properly (e.g. it is dynamically allocated and not deallocated properly), then the std::unique_ptr member will not be destroyed either, and the object being managed by the std::unique_ptr will not be deallocated. To avoid this, we should ensure that any class that contains a std::unique_ptr member has a proper destructor that will clean up the resource when the class object is destroyed. Additionally, we should follow the rule of five and define a copy constructor, copy assignment operator, move constructor, and move assignment operator to properly manage ownership of the resource when copying or moving objects of the class. By doing this, we can ensure that our class properly manages its resources and avoids issues such as memory leaks and double deletion.
+
+```cpp
+#include <iostream>
+#include <memory> // for std::unique_ptr
+
+class MyClass
+{
+private:
+    std::unique_ptr<int> m_data; // unique_ptr member variable to manage a dynamically allocated int
+public:
+    MyClass(int value) : m_data{ std::make_unique<int>(value) } {} // constructor that initializes the unique_ptr with a new int
+    ~MyClass() = default; // default destructor will automatically clean up the unique_ptr
+
+    // Copy constructor
+    MyClass(const MyClass& other) : m_data{ std::make_unique<int>(*other.m_data) } {} // copy constructor that creates a new int with the same value as the other object's int
+
+    // Move constructor
+    MyClass(MyClass&& other) noexcept : m_data{ std::move(other.m_data) } {} // move constructor that transfers ownership of the unique_ptr from the other object to this object
+
+    // Copy assignment operator
+    MyClass& operator=(const MyClass& other) {
+        if(this == &other){
+            return *this; // check for self-assignment and do nothing if we're trying to assign
+        }
+        m_data = std::make_unique<int>(*other.m_data); // copy assignment operator that creates a new int with the same value as the other object's int and assigns it to this object's unique_ptr
+        return *this; // return the current object to allow chaining of assignment operations
+    }
+
+    // Move assignment operator
+    MyClass& operator=(MyClass&& other) noexcept {
+        if(this == &other){
+            return *this; // check for self-assignment and do nothing if we're trying to assign
+        }
+        m_data = std::move(other.m_data); // move assignment operator that transfers ownership of the unique_ptr from the other object to this object
+        return *this; // return the current object to allow chaining of assignment operations
+    }
+
+    void print() const {
+        if(m_data){
+            std::cout << "Value: " << *m_data << '\n'; // print the value of the int being managed by the unique_ptr
+        } else {
+            std::cout << "No data\n"; // print a message if the unique_ptr is empty (i.e. does not manage any resource)
+        }
+    }
+};
+
+int main()
+{
+    MyClass obj1{ 42 };
+    obj1.print(); // prints "Value: 42" (obj1 owns a unique_ptr that manages an int with value 42)
+    MyClass obj2 = obj1; // copy constructor is called
+    MyClass obj3 = std::move(obj1); // move constructor is called
+    
+    obj2.print(); // prints "Value: 42" (obj2 owns a copy of the resource)
+    obj3.print(); // prints "Value: 42" (obj3 owns the resource that was moved from obj1)
+
+}
+```
+* output will be:
+    * Value: 42
+    * Value: 42
+    * Value: 42
+
+
+## std::shared_ptr
+
+std::shared_ptr is a smart pointer that retains shared ownership of an object through a pointer. Multiple std::shared_ptr instances can own the same object, and the object is destroyed when the last std::shared_ptr owning it is destroyed or reset. std::shared_ptr is defined in the memory header.
+
+```cpp
+#include <iostream>
+#include <memory> // for std::shared_ptr
+
+class Resource
+{
+public:
+	Resource() { std::cout << "Resource acquired\n"; }
+	~Resource() { std::cout << "Resource destroyed\n"; }
+};
+
+int main(){
+    // allocate a Resource object and have it owned by std::shared_ptr
+	Resource* res { new Resource };
+    std::shared_ptr<Resource> ptr1{ res }; // create a shared_ptr that owns the Resource object
+    {
+        //std::shared_ptr<Resource> ptr2{ res }; // create another indpendent shared_ptr that also owns the same Resource object (this is a problem because we have two shared_ptrs that both think they own the same resource, which can lead to double deletion when both shared_ptrs go out of scope)
+        std::shared_ptr<Resource> ptr2{ ptr1 }; // create another shared_ptr that shares ownership of the same Resource object (this is the correct way to create a shared_ptr that shares ownership of the same resource, as it will properly manage the reference count and ensure that the resource is only deleted when the last shared_ptr owning it is destroyed)
+
+        std::cout << "ptr1 use count: " << ptr1.use_count() << '\n'; // prints "ptr1 use count: 2" (both ptr1 and ptr2 share ownership of the Resource object)
+        std::cout << "ptr2 use count: " << ptr2.use_count() << '\n'; // prints "ptr2 use count: 2" (both ptr1 and ptr2 share ownership of the Resource object)
+
+        std::cout << "Killing one shared pointer\n";
+        // ptr2 goes out of scope here, and the Resource object is not destroyed because ptr1 still owns it
+    }
+    std::cout << "ptr1 use count: " << ptr1.use_count() << '\n'; // prints "ptr1 use count: 1" (only ptr1 owns the Resource object)
+    std::cout << "Killing the last shared pointer\n";
+    return 0; // when main returns, ptr1 goes out of scope and the Resource object is destroyed because ptr1 is the last shared_ptr owning it
+}
+```
+* output will be:
+    * Resource acquired
+    * ptr1 use count: 2
+    * ptr2 use count: 2
+    * Killing one shared pointer
+    * ptr1 use count: 1
+    * Killing the last shared pointer
+
+## std::make_shared :-
+
+std::make_unique() can be used to create a std::unique_ptr in C++14, std::make_shared() can (and should) be used to make a std::shared_ptr. std::make_shared() is available in C++11.
+
+```cpp
+#include <iostream>
+#include <memory> // for std::shared_ptr
+
+class Resource
+{
+public:
+	Resource() { std::cout << "Resource acquired\n"; }
+	~Resource() { std::cout << "Resource destroyed\n"; }
+};
+int main()
+{
+	// allocate a Resource object and have it owned by std::shared_ptr
+	auto ptr1 { std::make_shared<Resource>() };
+	{
+		auto ptr2 { ptr1 }; // create ptr2 using copy of ptr1
+		std::cout << "Killing one shared pointer\n";
+	} // ptr2 goes out of scope here, but nothing happens
+	std::cout << "Killing another shared pointer\n";
+	return 0;
+} // ptr1 goes out of scope here, and the allocated Resource is destroyed
+```
+
+* output will be:
+    * Resource acquired
+    * Killing one shared pointer
+    * Killing another shared pointer
+    * Resource destroyed
+
+### Digging into std::shared_ptr:-
+
+Unlike std::unique_ptr, which uses a single pointer internally, std::shared_ptr uses two pointers internally. One pointer points at the resource being managed. The other points at a “control block”, which is a dynamically allocated object that tracks of a bunch of stuff, including how many std::shared_ptr are pointing at the resource. When a std::shared_ptr is created via a std::shared_ptr constructor, the memory for the managed object (which is usually passed in) and control block (which the constructor creates) are allocated separately. However, when using std::make_shared(), this can be optimized into a single memory allocation, which leads to better performance.
+
+This also explains why independently creating two std::shared_ptr pointed to the same resource gets us into trouble. Each std::shared_ptr will have one pointer pointing at the resource. However, each std::shared_ptr will independently allocate its own control block, which will indicate that it is the only pointer owning that resource. Thus, when that std::shared_ptr goes out of scope, it will deallocate the resource, not realizing there are other std::shared_ptr also trying to manage that resource.
+
+However, when a std::shared_ptr is cloned using copy assignment, the data in the control block can be appropriately updated to indicate that there are now additional std::shared_ptr co-managing the resource.
+
+## std::weak_ptr
+
+std::weak_ptr is a smart pointer that holds a non-owning ("weak") reference to an object that is managed by std::shared_ptr. It is used to break circular references between std::shared_ptr instances, which can lead to memory leaks. std::weak_ptr is defined in the memory header.
+
+### What is a circular reference?
+
+A Circular reference (also called a cyclical reference or a cycle) is a series of references where each object references the next, and the last object references back to the first, causing a referential loop. The references do not need to be actual C++ references -- they can be pointers, unique IDs, or any other means of identifying specific objects.
+```cpp
+#include <iostream>
+#include <memory>
+
+class Resource2; // forward declaration of Resource2
+
+class Resource1
+{
+public:
+    std::shared_ptr<Resource2> m_ptr2; // shared_ptr to Resource2  
+    Resource1() { std::cout << "Resource1 acquired\n"; }
+    ~Resource1() { std::cout << "Resource1 destroyed\n"; }
+};
+
+class Resource2
+{
+public:
+    std::shared_ptr<Resource1> m_ptr1; // shared_ptr to Resource1
+    Resource2() { std::cout << "Resource2 acquired\n"; }
+    ~Resource2() { std::cout << "Resource2 destroyed\n"; }
+};
+
+int main()
+{
+    std::shared_ptr<Resource1> p1{ new Resource1 }; // create a shared_ptr to Resource1
+    std::shared_ptr<Resource2> p2{ new Resource2 }; // create a shared_ptr to Resource2
+
+    p1->m_ptr2 = p2; // R1 has a shared_ptr to R2
+    p2->m_ptr1 = p1; // R2 has a shared_ptr to R1, creating a circular reference
+
+    return 0;
+}
+```
+* output will be:
+    * Resource1 acquired
+    * Resource2 acquired    
+
+
+* explaining in depth the above code:
+1. We create a std::shared_ptr p1 that points to a new Resource1 object, reference count for the Resource1 object is now 1
+2. We create a std::shared_ptr p2 that points to a new Resource2 object, reference count for the Resource2 object is now 1
+3. We set p1's m_ptr2 to point to p2, so now Resource1 has a shared_ptr to Resource2, reference count for the Resource2 object is now 2
+4. We set p2's m_ptr1 to point to p1, so now Resource2 has a shared_ptr to Resource1, reference count for the Resource1 object is now 2
+5. When main() returns, p1 & p2 go out of scope refernce count for both Resource1 and Resource2 objects is decremented by 1, but since both objects still have a reference count of 1 (due to the circular reference), neither object is destroyed, leading to a memory leak. This is where std::weak_ptr comes in to break the circular reference and allow proper cleanup of resources.
+
+## Using std::weak_ptr to break circular references
+
+A std::weak_ptr is an observer -- it can observe and access the same object as a std::shared_ptr (or other std::weak_ptrs) but it is not considered an owner of the object. A std::weak_ptr does not contribute to the reference count of the object it observes, so it does not prevent the object from being destroyed when the last std::shared_ptr owning it is destroyed. This makes std::weak_ptr useful for breaking circular references between std::shared_ptr instances.
+
+# Understanding `shared_ptr` and `weak_ptr` Circular Reference Problem
+
+## Code
+
+```cpp
+#include <iostream>
+#include <memory>
+
+class Resource2;
+
+class Resource1
+{
+public:
+    std::shared_ptr<Resource2> m_ptr2;
+
+    Resource1() { std::cout << "Resource1 acquired\n"; }
+    ~Resource1() { std::cout << "Resource1 destroyed\n"; }
+};
+
+class Resource2
+{
+public:
+    std::weak_ptr<Resource1> m_ptr1;
+
+    Resource2() { std::cout << "Resource2 acquired\n"; }
+    ~Resource2() { std::cout << "Resource2 destroyed\n"; }
+};
+
+int main()
+{
+    std::shared_ptr<Resource1> p1{ new Resource1 };
+    std::shared_ptr<Resource2> p2{ new Resource2 };
+
+    p1->m_ptr2 = p2;
+    p2->m_ptr1 = p1;
+
+    return 0;
+}
+```
+
+---
+
+# Output
+
+```text
+Resource1 acquired
+Resource2 acquired
+Resource1 destroyed
+Resource2 destroyed
+```
+
+---
+
+# Step-by-Step Deep Explanation
+
+## Step 1: Create `p1`
+
+```cpp
+std::shared_ptr<Resource1> p1{ new Resource1 };
+```
+
+- A `Resource1` object is created.
+- `p1` becomes the owner of that object.
+
+Reference count of `Resource1`:
+
+```text
+1
+```
+
+Why?
+
+Because only `p1` owns it.
+
+---
+
+## Step 2: Create `p2`
+
+```cpp
+std::shared_ptr<Resource2> p2{ new Resource2 };
+```
+
+- A `Resource2` object is created.
+- `p2` becomes the owner of that object.
+
+Reference count of `Resource2`:
+
+```text
+1
+```
+
+---
+
+# Current Situation
+
+```text
+p1 ---> Resource1
+
+p2 ---> Resource2
+```
+
+Reference counts:
+
+```text
+Resource1 = 1
+Resource2 = 1
+```
+
+---
+
+## Step 3: Assign `p2` to `m_ptr2`
+
+```cpp
+p1->m_ptr2 = p2;
+```
+
+Now:
+
+- `Resource1` contains a `shared_ptr` pointing to `Resource2`.
+
+That means:
+
+```text
+p2
+AND
+p1->m_ptr2
+```
+
+both own `Resource2`.
+
+So reference count of `Resource2` becomes:
+
+```text
+2
+```
+
+---
+
+# Current Structure
+
+```text
+p1 ---> Resource1 ----> Resource2 <--- p2
+```
+
+Reference counts:
+
+```text
+Resource1 = 1
+Resource2 = 2
+```
+
+---
+
+## Step 4: Assign `p1` to `m_ptr1`
+
+```cpp
+p2->m_ptr1 = p1;
+```
+
+But `m_ptr1` is a:
+
+```cpp
+std::weak_ptr<Resource1>
+```
+
+A `weak_ptr`:
+
+- observes an object
+- does NOT own the object
+- does NOT increase reference count
+
+So reference count of `Resource1` remains:
+
+```text
+1
+```
+
+---
+
+# Final Structure
+
+```text
+                weak_ptr
+                   |
+                   v
+p1 ---> Resource1 ----> Resource2 <--- p2
+            shared_ptr
+```
+
+Reference counts:
+
+```text
+Resource1 = 1
+Resource2 = 2
+```
+
+---
+
+# Why `weak_ptr` Solves the Problem
+
+If `m_ptr1` had also been a `shared_ptr`:
+
+```cpp
+std::shared_ptr<Resource1> m_ptr1;
+```
+
+then:
+
+- `Resource1` would own `Resource2`
+- `Resource2` would own `Resource1`
+
+Both objects would keep each other alive forever.
+
+This creates a **circular reference**.
+
+As a result:
+
+```text
+Reference count never becomes 0
+```
+
+and destructors are never called.
+
+This causes a memory leak.
+
+---
+
+# What Happens When `main()` Ends
+
+Local variables are destroyed in reverse order.
+
+So:
+
+## First `p2` is destroyed
+
+Reference count of `Resource2`:
+
+```text
+2 -> 1
+```
+
+Why not zero?
+
+Because `p1->m_ptr2` still owns `Resource2`.
+
+So `Resource2` is NOT destroyed yet.
+
+---
+
+## Then `p1` is destroyed
+
+Reference count of `Resource1`:
+
+```text
+1 -> 0
+```
+
+Now `Resource1` gets destroyed.
+
+Output:
+
+```text
+Resource1 destroyed
+```
+
+---
+
+# Important Internal Detail
+
+During destruction of `Resource1`:
+
+```cpp
+m_ptr2
+```
+
+is also destroyed.
+
+Since `m_ptr2` was owning `Resource2`:
+
+Reference count of `Resource2` becomes:
+
+```text
+1 -> 0
+```
+
+Now `Resource2` also gets destroyed.
+
+Output:
+
+```text
+Resource2 destroyed
+```
+
+---
+
+# Final Destruction Flow
+
+```text
+p2 destroyed
+Resource2 count: 2 -> 1
+
+p1 destroyed
+Resource1 count: 1 -> 0
+Resource1 destroyed
+
+m_ptr2 destroyed
+Resource2 count: 1 -> 0
+Resource2 destroyed
+```
 
