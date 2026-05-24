@@ -6155,3 +6155,293 @@ Resource2 destroyed
 ```
 
 # Chapter 23
+
+## Object composition 
+
+Personal computer is built from a CPU, a motherboard, some memory, etc… Even you are built from smaller parts: you have a head, a body, some legs, arms, and so on. This process of building complex objects from simpler ones is called object composition.
+
+object composition models a “has-a” relationship between two objects. A car “has-a” transmission. Your computer “has-a” CPU. You “have-a” heart. The complex object is sometimes called the whole, or the parent. The simpler object is often called the part, child, or component.
+
+### Types of object composition
+
+There are two basic subtypes of object composition: composition and aggregation (both of which are often just called composition). The difference between these two subtypes is whether the whole is responsible for the lifetime of the part. In composition, the whole is responsible for the lifetime of the part. In aggregation, the whole is not responsible for the lifetime of the part.
+
+* Composition
+
+To qualify as a composition, an object and a part must have the following relationship:
+
+* The part (member) is part of the object (class)
+* The part (member) can only belong to one object (class) at a time
+* The part (member) has its existence managed by the object (class)
+* The part (member) does not know about the existence of the object (class)
+
+In a composition relationship, the object is responsible for the existence of the parts. Most often, this means the part is created when the object is created, and destroyed when the object is destroyed. But more broadly, it means the object manages the part’s lifetime in such a way that the user of the object does not need to get involved. For example, when a body is created, the heart is created too. When a person’s body is destroyed, their heart is destroyed too. Because of this, composition is sometimes called a “death relationship”.
+
+And finally, the part doesn’t know about the existence of the whole. Your heart operates blissfully unaware that it is part of a larger structure. We call this a unidirectional relationship, because the body knows about the heart, but not the other way around.
+
+```cpp
+#include <iostream>
+class Fraction
+{
+private:
+	int m_numerator;
+	int m_denominator;
+
+public:
+	Fraction(int numerator=0, int denominator=1)
+		: m_numerator{ numerator }, m_denominator{ denominator }
+	{
+	}
+};
+
+```
+
+This class has two data members: a numerator and a denominator. The numerator and denominator are part of the Fraction (contained within it). They can not belong to more than one Fraction at a time. The numerator and denominator don’t know they are part of a Fraction, they just hold integers. When a Fraction instance is created, the numerator and denominator are created. When the fraction instance is destroyed, the numerator and denominator are destroyed as well.
+
+## Aggregation
+
+To qualify as an aggregation, a whole object and its parts must have the following relationship:
+
+* The part (member) is part of the object (class)
+* The part (member) can (if desired) belong to more than one object (class) at a time
+* The part (member) does not have its existence managed by the object (class)
+* The part (member) does not know about the existence of the object (class)
+
+In an aggregation relationship, the object is not responsible for the existence of the parts. The parts can exist independently of the whole. For example, consider the relationship between a person and their home address. In this example, for simplicity, we’ll say every person has an address. However, that address can belong to more than one person at a time: for example, to both you and your roommate or significant other. However, that address isn’t managed by the person -- the address probably existed before the person got there, and will exist after the person is gone. Additionally, a person knows what address they live at, but the addresses don’t know what people live there. Therefore, this is an aggregate relationship.
+
+* Implementing aggregations
+
+Because aggregations are similar to compositions in that they are both part-whole relationships, they are implemented almost identically, and the difference between them is mostly semantic. In a composition, we typically add our parts to the composition using normal member variables (or pointers where the allocation and deallocation process is handled by the composition class).
+
+In an aggregation, we also add parts as member variables. However, these member variables are typically either references or pointers that are used to point at objects that have been created outside the scope of the class. Consequently, an aggregation usually either takes the objects it is going to point to as constructor parameters, or it begins empty and the subobjects are added later via access functions or operators. Because these parts exist outside of the scope of the class, when the class is destroyed, the pointer or reference member variable will be destroyed (but not deleted). Consequently, the parts themselves will still exist.
+
+Let’s take a look at a Teacher and Department example in more detail. In this example, we’re going to make a couple of simplifications: First, the department will only hold one teacher. Second, the teacher will be unaware of what department they’re part of.
+
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Teacher
+{
+private:
+  std::string m_name{};
+
+public:
+  Teacher(std::string_view name)
+      : m_name{ name }
+  {
+  }
+
+  const std::string& getName() const { return m_name; }
+};
+
+class Department
+{
+private:
+  const Teacher& m_teacher; // This dept holds only one teacher for simplicity, but it could hold many teachers
+
+public:
+  Department(const Teacher& teacher)
+      : m_teacher{ teacher }
+  {
+  }
+};
+
+int main()
+{
+  // Create a teacher outside the scope of the Department
+  Teacher bob{ "Bob" }; // create a teacher
+
+  {
+    // Create a department and use the constructor parameter to pass
+    // the teacher to it.
+    Department department{ bob };
+
+  } // department goes out of scope here and is destroyed
+
+  // bob still exists here, but the department doesn't
+
+  std::cout << bob.getName() << " still exists!\n";
+
+  return 0;
+}
+```
+
+In this case, bob is created independently of department, and then passed into department‘s constructor. When department is destroyed, the m_teacher reference is destroyed, but the teacher itself is not destroyed, so it still exists until it is independently destroyed later in main().
+
+* Pick the right relationship for what you’re modeling
+
+For example, if you’re writing a body shop simulator, you may want to implement a car and engine as an aggregation, so the engine can be removed and put on a shelf somewhere for later. However, if you’re writing a racing simulation, you may want to implement a car and an engine as a composition, since the engine will never exist outside of the car in that context.
+
+* std::reference_wrapper
+
+In the Department/Teacher example above, we used a reference in the Department to store the Teacher. This works fine if there is only one Teacher, but what if a Department has multiple Teachers? We’d like to store those Teachers in a list of some kind (e.g. a std::vector) but fixed arrays and the various standard library lists can’t hold references (because list elements must be assignable, and references can’t be reassigned). To get around this, we can use std::reference_wrapper, which is a class template that can hold a reference to an object and can be stored in standard library containers. std::reference_wrapper is defined in the functional header.
+
+How to use std::reference_wrapper:
+1. Include the functional header
+2. When you want to store a reference to an object, wrap it in a std::reference_wrapper using the std::ref function. 
+3. When you want to access the object through the std::reference_wrapper, use the get() member function to retrieve the reference.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <functional> // for std::reference_wrapper and std::ref
+
+class Teacher
+{
+private:
+    std::string m_name;
+public:
+    Teacher(std::string name) : m_name(name) {}
+    const std::string& getName() const { return m_name; }
+};
+
+int main()
+{
+    Teacher bob("Bob");
+    Teacher alice("Alice");
+
+    std::vector<std::reference_wrapper<Teacher>> teachers; // create a vector of reference wrappers to Teacher objects
+    teachers.push_back(std::ref(bob)); // add a reference to bob to the vector
+    teachers.push_back(std::ref(alice)); // add a reference to alice to the vector
+
+    for (const auto& teacher : teachers) {
+        std::cout << teacher.get().getName() << std::endl; // access the Teacher object through the reference wrapper and print its name
+    }
+
+    return 0;
+}
+```
+
+## Association
+
+Association is a relationship between two classes that is not a composition or an aggregation. In an association, the whole and the part are separate objects that know about each other, but neither one manages the lifetime of the other. For example, consider the relationship between a student and a course. A student can be enrolled in multiple courses, and a course can have multiple students enrolled in it. The student and the course are separate objects that know about each other (the student knows what courses they are enrolled in, and the course knows which students are enrolled in it), but neither one manages the lifetime of the other (the student can exist without being enrolled in any courses, and the course can exist without any students enrolled in it). Therefore, this is an association relationship.
+
+* Implementing associations
+
+Because associations are a broad type of relationship, they can be implemented in many different ways. However, most often, associations are implemented using pointers, where the object points at the associated object.
+
+In this example, we’ll implement a bi-directional Doctor/Patient relationship, since it makes sense for the Doctors to know who their Patients are, and vice-versa.
+
+```cpp
+#include <functional> // reference_wrapper
+#include <iostream>
+#include <string>
+#include <string_view>
+#include <vector>
+
+// Since Doctor and Patient have a circular dependency, we're going to forward declare Patient
+class Patient;
+
+class Doctor
+{
+private:
+	std::string m_name{};
+	std::vector<std::reference_wrapper<const Patient>> m_patient{};
+
+public:
+	Doctor(std::string_view name) :
+		m_name{ name }
+	{
+	}
+
+	void addPatient(Patient& patient);
+
+	// We'll implement this function below Patient since we need Patient to be defined at that point
+	friend std::ostream& operator<<(std::ostream& out, const Doctor& doctor);
+
+	const std::string& getName() const { return m_name; }
+};
+
+class Patient
+{
+private:
+	std::string m_name{};
+	std::vector<std::reference_wrapper<const Doctor>> m_doctor{}; // so that we can use it here
+
+	// We're going to make addDoctor private because we don't want the public to use it.
+	// They should use Doctor::addPatient() instead, which is publicly exposed
+	void addDoctor(const Doctor& doctor)
+	{
+		m_doctor.push_back(doctor);
+	}
+
+public:
+	Patient(std::string_view name)
+		: m_name{ name }
+	{
+	}
+
+	// We'll implement this function below to parallel operator<<(std::ostream&, const Doctor&)
+	friend std::ostream& operator<<(std::ostream& out, const Patient& patient);
+
+	const std::string& getName() const { return m_name; }
+
+	// We'll friend Doctor::addPatient() so it can access the private function Patient::addDoctor()
+	friend void Doctor::addPatient(Patient& patient);
+};
+
+void Doctor::addPatient(Patient& patient)
+{
+	// Our doctor will add this patient
+	m_patient.push_back(patient);
+
+	// and the patient will also add this doctor
+	patient.addDoctor(*this);
+}
+
+std::ostream& operator<<(std::ostream& out, const Doctor& doctor)
+{
+	if (doctor.m_patient.empty())
+	{
+		out << doctor.m_name << " has no patients right now";
+		return out;
+	}
+
+	out << doctor.m_name << " is seeing patients: ";
+	for (const auto& patient : doctor.m_patient)
+		out << patient.get().getName() << ' ';
+
+	return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const Patient& patient)
+{
+	if (patient.m_doctor.empty())
+	{
+		out << patient.getName() << " has no doctors right now";
+		return out;
+	}
+
+	out << patient.m_name << " is seeing doctors: ";
+	for (const auto& doctor : patient.m_doctor)
+		out << doctor.get().getName() << ' ';
+
+	return out;
+}
+
+int main()
+{
+	// Create a Patient outside the scope of the Doctor
+	Patient dave{ "Dave" };
+	Patient frank{ "Frank" };
+	Patient betsy{ "Betsy" };
+
+	Doctor james{ "James" };
+	Doctor scott{ "Scott" };
+
+	james.addPatient(dave);
+
+	scott.addPatient(dave);
+	scott.addPatient(betsy);
+
+	std::cout << james << '\n';
+	std::cout << scott << '\n';
+	std::cout << dave << '\n';
+	std::cout << frank << '\n';
+	std::cout << betsy << '\n';
+
+	return 0;
+}
+```
