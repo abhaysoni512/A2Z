@@ -1,51 +1,44 @@
+#include <string_view>
 #include <iostream>
 
-class A
+class Base
 {
+protected:
+    int m_value{};
+
 public:
-    A(int a)
+    Base(int value)
+        : m_value{value}
     {
-        std::cout << "A: " << a << '\n';
     }
-    ~A()
-    {
-        std::cout << "Destroying A\n";
-    }
+
+    std::string_view getName() const { return "Base"; }
+    int getValue() const { return m_value; }
 };
 
-class B : public A
+class Derived : public Base
 {
 public:
-    B(int a, double b)
-        : A{a}
+    Derived(int value)
+        : Base{value}
     {
-        std::cout << "B: " << b << '\n';
     }
 
-    ~B()
-    {
-        std::cout << "Destroying B\n";
-    }
-};
-
-class C : public B
-{
-public:
-    C(int a, double b, char c)
-        : B{a, b}
-    {
-        std::cout << "C: " << c << '\n';
-    }
-
-    ~C()
-    {
-        std::cout << "Destroying C\n";
-    }
+    std::string_view getName() const { return "Derived"; }
+    int getValueDoubled() const { return m_value * 2; }
 };
 
 int main()
 {
-    C c{5, 4.3, 'R'};
+    Derived derived{5};
+
+    // These are both legal!
+    Base &rBase{derived}; // rBase is an lvalue reference (not an rvalue reference)
+    Base *pBase{&derived};
+
+    std::cout << "derived is a " << derived.getName() << " and has value " << derived.getValue() << '\n';
+    std::cout << "rBase is a " << rBase.getName() << " and has value " << rBase.getValue() << '\n';
+    std::cout << "pBase is a " << pBase->getName() << " and has value " << pBase->getValue() << '\n';
 
     return 0;
 }
