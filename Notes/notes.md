@@ -6513,7 +6513,7 @@ Inheritance allows us to reuse classes by having other classes inherit their mem
 
 When we create an object of a derived class, the base class constructor is called first, followed by the derived class constructor. This is because the derived class may rely on the base class being properly initialized before it can be initialized itself. The base class constructor is responsible for initializing the members of the base class, and the derived class constructor is responsible for initializing the members of the derived class. If the derived class constructor were called before the base class constructor, it would not have access to the members of the base class, which could lead to undefined behavior. Therefore, C++ ensures that the base class constructor is called first to properly initialize the base class before the derived class is initialized.
 
-## Constructors and initialization of derived classes
+### Constructors and initialization of derived classes
 
 When we create an object of a derived class, the constructor of the derived class is responsible for initializing the members of the derived class, while the constructor of the base class is responsible for initializing the members of the base class. The derived class constructor can call the base class constructor using an initializer list to ensure that the base class members are properly initialized before the derived class members are initialized. If the derived class constructor does not explicitly call the base class constructor, the default constructor of the base class will be called automatically. However, if the base class does not have a default constructor, or if we want to call a specific constructor of the base class, we must explicitly call it in the initializer list of the derived class constructor. This allows us to ensure that all members of both the base and derived classes are properly initialized when an object of the derived class is created.
 
@@ -7217,5 +7217,500 @@ Another problem with multiple inheritance which is more serious:- the diamond pr
 
 In detail we will study it in future chapters.
 
+# Chapter 25 : Virtual Functions
+
+##  Pointers and references to the base class of derived objects
+
+```cpp
+#include <string_view>
+
+class Base
+{
+protected:
+    int m_value {};
+
+public:
+    Base(int value)
+        : m_value{ value }
+    {
+    }
+
+    std::string_view getName() const { return "Base"; }
+    int getValue() const { return m_value; }
+};
+
+class Derived: public Base
+{
+public:
+    Derived(int value)
+        : Base{ value }
+    {
+    }
+
+    std::string_view getName() const { return "Derived"; }
+    int getValueDoubled() const { return m_value * 2; }
+};
+
+int main()
+{
+    Derived derived{ 5 };
+
+    // These are both legal!
+    Base& rBase{ derived }; // rBase is an lvalue reference (not an rvalue reference)
+    Base* pBase{ &derived };
+
+    std::cout << "derived is a " << derived.getName() << " and has value " << derived.getValue() << '\n';
+    std::cout << "rBase is a " << rBase.getName() << " and has value " << rBase.getValue() << '\n';
+    std::cout << "pBase is a " << pBase->getName() << " and has value " << pBase->getValue() << '\n';
+
+    return 0;
+}
+```
+
+output:
+
+```text
+derived is a Derived and has value 5
+rBase is a Base and has value 5
+pBase is a Base and has value 5
+```
+
+It turns out that because rBase and pBase are a Base reference and pointer, they can only see members of Base (or any classes that Base inherited). So even though Derived::getName() shadows (hides) Base::getName() for Derived objects, the Base pointer/reference can not see Derived::getName(). Consequently, they call Base::getName(), which is why rBase and pBase report that they are a Base rather than a Derived.
+
+Another example :-
+
+```cpp
+#include <iostream>
+#include <string_view>
+#include <string>
+
+class Animal
+{
+protected:
+    std::string m_name;
+
+    // We're making this constructor protected because
+    // we don't want people creating Animal objects directly,
+    // but we still want derived classes to be able to use it.
+    Animal(std::string_view name)
+        : m_name{ name }
+    {
+    }
+
+    // To prevent slicing (covered later)
+    Animal(const Animal&) = delete;
+    Animal& operator=(const Animal&) = delete;
+
+public:
+    std::string_view getName() const { return m_name; }
+    std::string_view speak() const { return "???"; }
+};
+
+class Cat: public Animal
+{
+public:
+    Cat(std::string_view name)
+        : Animal{ name }
+    {
+    }
+
+    std::string_view speak() const { return "Meow"; }
+};
+
+class Dog: public Animal
+{
+public:
+    Dog(std::string_view name)
+        : Animal{ name }
+    {
+    }
+
+    std::string_view speak() const { return "Woof"; }
+};
+
+int main()
+{
+    const Cat cat{ "Fred" };
+    std::cout << "cat is named " << cat.getName() << ", and it says " << cat.speak() << '\n';
+
+    const Dog dog{ "Garbo" };
+    std::cout << "dog is named " << dog.getName() << ", and it says " << dog.speak() << '\n';
+
+    const Animal* pAnimal{ &cat };
+    std::cout << "pAnimal is named " << pAnimal->getName() << ", and it says " << pAnimal->speak() << '\n';
+
+    pAnimal = &dog;
+    std::cout << "pAnimal is named " << pAnimal->getName() << ", and it says " << pAnimal->speak() << '\n';
+
+    return 0;
+}
+```
+
+output:
+
+```text
+cat is named Fred, and it says Meow
+dog is named Garbo, and it says Woof
+pAnimal is named Fred, and it says ???
+pAnimal is named Garbo, and it says ???
+```
+
+Now, obvious question comes in mind, why we are using Base* pBase = &derived; instead of Derived* pDerived = &derived;?
+
+The reason is that using a pointer to the base class (Base* pBase) allows us to take advantage of polymorphism, which is a fundamental principle of object-oriented programming. Polymorphism allows us to treat objects of different derived classes as if they were objects of the base class, which can simplify code and make it more flexible.
+
+Let’s say you wanted to write a function that printed an animal’s name and sound. Without using a pointer to a base class, you’d have to write it using overloaded functions, like this:
+
+```cpp
+void report(const Cat& cat)
+{
+    std::cout << cat.getName() << " says " << cat.speak() << '\n';
+}
+
+void report(const Dog& dog)
+{
+    std::cout << dog.getName() << " says " << dog.speak() << '\n';
+}
+```
+
+This is fine if you only have a few derived classes, but what if you have many derived classes? You’d have to write a separate overloaded function for each derived class, which can quickly become unmanageable.
+
+By using a pointer to the base class, you can write a single function that can handle any derived class, like this:
+
+```cpp
+void report(const Animal& rAnimal)
+{
+    std::cout << rAnimal.getName() << " says " << rAnimal.speak() << '\n';
+}
+```
+
+## Virtual functions and polymorphism
+
+A virtual function is a special kind of member function that is declared in a base class and is meant to be overridden in derived classes. When a virtual function is called through a pointer or reference to the base class, the version of the function that is executed is determined at runtime based on the actual type of the object being pointed to or referenced, rather than the type of the pointer or reference itself. This allows for polymorphism, which is the ability for objects of different types to be treated as objects of a common base type, and for the correct version of a function to be called based on the actual type of the object at runtime. 
+
+A derived function is considered a match if it has the same signature (name, parameter types, and whether it is const) and return type as the base version of the function. Such functions are called overrides.
+
+To make a function virtual, simply place the “virtual” keyword before the function declaration.
+
+```cpp
+#include <iostream>
+#include <string_view>
+
+class Base
+{
+public:
+    virtual std::string_view getName() const { return "Base"; } // note addition of virtual keyword
+};
+
+class Derived: public Base
+{
+public:
+    std::string_view getName() const { return "Derived"; }
+};
+
+int main()
+{
+    Derived derived {};
+    Base& rBase{ derived };
+    std::cout << "rBase is a " << rBase.getName() << '\n';
+
+    return 0;
+}
+```
+
+output:
+
+```text
+rBase is a Derived
+```
+
+Another example :-
+
+```cpp
+#include <iostream>
+#include <string_view>
+
+class A
+{
+public:
+    virtual std::string_view getName() const { return "A"; }
+};
+
+class B: public A
+{
+public:
+    virtual std::string_view getName() const { return "B"; }
+};
+
+class C: public B
+{
+public:
+    virtual std::string_view getName() const { return "C"; }
+};
+
+class D: public C
+{
+public:
+    virtual std::string_view getName() const { return "D"; }
+};
+
+int main()
+{
+    C c {};
+    A& rBase{ c };
+    std::cout << "rBase is a " << rBase.getName() << '\n';
+
+    return 0;
+}
+```
+
+Working of above code is as follows:
+* rbase is a reference to an A, but it actually refers to a C object.
+* When we call rBase.getName(), the compiler looks to see if there is a getName() function in A. There is, but it is virtual, so the compiler knows to look for an override in the derived class.
+* The compiler looks to see if there is a getName() function in B. There is, but it is virtual, so the compiler knows to look for an override in the derived class.
+* The compiler looks to see if there is a getName() function in C. There is, and it is an override of the virtual function in A, so the compiler calls C::getName(). Note that it will not call D::getName(), because our original object was a C, not a D, so only functions between A and C are considered.
+
+Note : Note that virtual function resolution only works when a virtual member function is called through a pointer or reference to a class type object. This is because the compiler needs to be able to determine at runtime which version of the function to call based on the actual type of the object being pointed to or referenced. 
+
+### Polymorphism
+
+In programming, polymorphism refers to the ability of an entity to have multiple forms (the term “polymorphism” literally means “many forms”). For example, consider the following two function declarations:
+
+```cpp
+int add(int, int);
+double add(double, double);
+```
+
+* Type polymorphism
+
+1. Compile-time polymorphism (also known as static polymorphism) is achieved through function overloading and operator overloading. In this case, the compiler determines which function to call based on the types of the arguments at compile time.
+
+2. Runtime polymorphism (also known as dynamic polymorphism) is achieved through the use of virtual functions and inheritance. In this case, the decision of which function to call is made at runtime based on the actual type of the object being pointed to or referenced.
+
+## The override and final specifiers, and covariant return types
+
+To address some common challenges with inheritance, C++ has two inheritance-related identifiers: override and final. Note that these identifiers are not keywords -- they are normal words that have special meaning only when used in certain contexts. The C++ standard calls them “identifiers with special meaning”, but they are often referred to as “specifiers”.
+
+### The override specifier
+
+```cpp
+#include <iostream>
+#include <string_view>
+
+class A
+{
+public:
+	virtual std::string_view getName1(int x) { return "A"; }
+	virtual std::string_view getName2(int x) { return "A"; }
+};
+
+class B : public A
+{
+public:
+	virtual std::string_view getName1(short x) { return "B"; } // note: parameter is a short
+	virtual std::string_view getName2(int x) const { return "B"; } // note: function is const
+};
+
+int main()
+{
+	B b{};
+	A& rBase{ b };
+	std::cout << rBase.getName1(1) << '\n';
+	std::cout << rBase.getName2(2) << '\n';
+
+	return 0;
+}
+```
+
+output:
+
+```text
+A
+A
+```
+
+Because rBase is an A reference to a B object, the intention here is to use virtual functions to access B::getName1() and B::getName2(). However, because B::getName1() takes a different parameter (a short instead of an int), it’s not considered an override of A::getName1(). More insidiously, because B::getName2() is const and A::getName2() isn’t, B::getName2() isn’t considered an override of A::getName2(). Consequently, the above code will call A::getName1() and A::getName2(), which is probably not what we intended.
+
+In this particular case, because A and B just print their names, it’s fairly easy to see that we messed up our overrides, and that the wrong virtual function is being called. However, in a more complicated program, where the functions have behaviors or return values that aren’t printed, such issues can be very difficult to debug.
+
+To help address the issue of functions that are meant to be overrides but aren’t, the override specifier can be applied to any virtual function to tell the compiler to enforce that the function is an override.
+
+If a function marked as override does not override a base class function (or is applied to a non-virtual function), the compiler will flag the function as an error.
+
+```cpp
+#include <string_view>
+
+class A
+{
+public:
+	virtual std::string_view getName1(int x) { return "A"; }
+	virtual std::string_view getName2(int x) { return "A"; }
+	virtual std::string_view getName3(int x) { return "A"; }
+};
+
+class B : public A
+{
+public:
+	std::string_view getName1(short int x) override { return "B"; } // compile error, function is not an override
+	std::string_view getName2(int x) const override { return "B"; } // compile error, function is not an override
+	std::string_view getName3(int x) override { return "B"; } // okay, function is an override of A::getName3(int)
+
+};
+
+int main()
+{
+	return 0;
+}
+```
+
+### The final specifier
+
+There may be cases where you don’t want someone to be able to override a virtual function, or inherit from a class. The final specifier can be used to tell the compiler to enforce this. If the user tries to override a function or inherit from a class that has been specified as final, the compiler will give a compile error.
+
+```cpp
+#include <string_view>
+
+class A
+{
+public:
+	virtual std::string_view getName() const { return "A"; }
+};
+
+class B : public A
+{
+public:
+	// note use of final specifier on following line -- that makes this function not able to be overridden in derived classes
+	std::string_view getName() const override final { return "B"; } // okay, overrides A::getName()
+};
+
+class C : public B
+{
+public:
+	std::string_view getName() const override { return "C"; } // compile error: overrides B::getName(), which is final
+};
+
+```
+
+In the above code, B::getName() overrides A::getName(), which is fine. But B::getName() has the final specifier, which means that any further overrides of that function should be considered an error. And indeed, C::getName() tries to override B::getName() (the override specifier here isn’t relevant, it’s just there for good practice), so the compiler will give a compile error.
+
+* Covariant return types
+
+There is one special case in which a derived class virtual function override can have a different return type than the base class and still be considered a matching override. If the return type of a virtual function is a pointer or a reference to some class, override functions can return a pointer or a reference to a derived class. These are called covariant return types. Here is an example:
+
+```cpp
+#include <iostream>
+#include <string_view>
+
+class Base
+{
+public:
+	// This version of getThis() returns a pointer to a Base class
+	virtual Base* getThis() { std::cout << "called Base::getThis()\n"; return this; }
+	void printType() { std::cout << "returned a Base\n"; }
+};
+
+class Derived : public Base
+{
+public:
+	// Normally override functions have to return objects of the same type as the base function
+	// However, because Derived is derived from Base, it's okay to return Derived* instead of Base*
+	Derived* getThis() override { std::cout << "called Derived::getThis()\n";  return this; }
+	void printType() { std::cout << "returned a Derived\n"; }
+};
+
+int main()
+{
+	Derived d{};
+	Base* b{ &d };
+	d.getThis()->printType(); // calls Derived::getThis(), returns a Derived*, calls Derived::printType
+	b->getThis()->printType(); // calls Derived::getThis(), returns a Base*, calls Base::printType
+
+	return 0;
+}
+```
+
+output:
+
+```text
+called Derived::getThis()
+returned a Derived
+called Derived::getThis()
+returned a Base
+```
+
+In the above example, we first call d.getThis(). Since d is a Derived, this calls Derived::getThis(), which returns a Derived*. This Derived* is then used to call non-virtual function Derived::printType().
+
+Now the interesting case. We then call b->getThis(). Variable b is a Base pointer to a Derived object. Base::getThis() is a virtual function, so this calls Derived::getThis(). Although Derived::getThis() returns a Derived*, because Base version of the function returns a Base*, the returned Derived* is upcast to a Base*. Because Base::printType() is non-virtual, Base::printType() is called.
+
+## Virtual destructors, virtual assignment, and overriding virtualization
+
+```cpp
+#include <iostream>
+class Base
+{
+public:
+    Base() {
+        std::cout << "Calling Base()\n";
+     }
+    virtual ~Base() // note: virtual
+    {
+        std::cout << "Calling ~Base()\n";
+    }
+};
+
+class Derived: public Base
+{
+private:
+    int* m_array {};
+
+public:
+    Derived(int length)
+      : m_array{ new int[length] }
+    {
+        std::cout << "Calling Derived()\n";
+    }
+
+    virtual ~Derived() // note: virtual
+    {
+        std::cout << "Calling ~Derived()\n";
+        delete[] m_array;
+    }
+};
+
+int main()
+{
+    Derived* derived { new Derived(5) };
+    Base* base { derived };
+
+    delete base;
+
+    return 0;
+}
+```
+
+output:
+
+```text
+Calling Base()
+calling Derived()
+Calling ~Derived()
+Calling ~Base()
+```
+
+Note :- As with normal virtual member functions, if a base class function is virtual, all derived overrides will be considered virtual regardless of whether they are specified as such. It is not necessary to create an empty derived class destructor just to mark it as virtual.
+
+Note :- Note that if you want your base class to have a virtual destructor that is otherwise empty, you can define your destructor this way:
+
+```cpp
+virtual ~Base() = default;
+```
+
+* Question: Should we make all destructors virtual?
+
+No, only base class destructors that are meant to be inherited from should be virtual. If a class is not meant to be inherited from, there’s no reason to make its destructor virtual. In fact, it’s better not to make it virtual, because virtual functions have some overhead i.e there’s a performance penalty for doing so (a virtual pointer added to every instance of your class). So you have to balance that cost, as well as your intent.
+
+Note : A base class destructor should be either public and virtual, or protected and non-virtual. 
+
+## Early binding and late binding
 
 

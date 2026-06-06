@@ -96,7 +96,7 @@ Set the `message` property in the tool to the summary below. **Ensure you includ
 ```markdown
 📋 **Chapter {N}: {CHAPTER_TITLE}**
 
-| 📊 Element                      | Count | Status                         |
+| 📊 Element                       | Count  | Status                         |
 |----------------------------------|-------|--------------------------------|
 | **Top-level sections (##)**      | X     | ✅ Found                       |
 | **Sub-sections (###)**           | Y     | ✅ Found                       |
@@ -633,14 +633,6 @@ After all sections, add:
 Include every C++ term, standard library type, keyword, or idiom that
 appears in this chapter. This table is the author's "quick lookup" card.
 
-### File Footer
-
-```markdown
----
-*Refined from personal notes · Chapter {N} of C++ series*
-*Original content 100% preserved · Language and examples simplified for
-C++ interview preparation format*
-```
 
 ---
 
@@ -653,7 +645,7 @@ chapter{N}_{slug}.md
 where slug = CHAPTER_TITLE lowercased with spaces replaced by `-` and
 special characters removed.
 
-Save to the same directory as `notes.md`.
+Save to the `Notes` folder where `notes.md` is located.
 
 Final confirmation to the user:
 
@@ -761,6 +753,7 @@ A: It compiles, but the object is in a "valid but unspecified state" — its
 contents are unspecified. Reading from it is technically allowed but logically
 wrong. The only safe operations are re-assigning it or letting it destruct.
 This is one of the most common subtle bugs in modern C++.
+
 ---
 ```
 

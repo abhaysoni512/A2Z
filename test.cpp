@@ -1,23 +1,42 @@
 #include <iostream>
-#include <string_view>
-
 class Base
 {
 public:
-    virtual std::string_view getName() const { return "Base"; } // note addition of virtual keyword
+    Base()
+    {
+        std::cout << "Calling Base()\n";
+    }
+    virtual ~Base() // note: virtual
+    {
+        std::cout << "Calling ~Base()\n";
+    }
 };
 
 class Derived : public Base
 {
+private:
+    int *m_array{};
+
 public:
-    std::string_view getName() const { return "Derived"; }
+    Derived(int length)
+        : m_array{new int[length]}
+    {
+        std::cout << "Calling Derived()\n";
+    }
+
+    virtual ~Derived() // note: virtual
+    {
+        std::cout << "Calling ~Derived()\n";
+        delete[] m_array;
+    }
 };
 
 int main()
 {
-    Derived derived{};
-    Base &rBase{derived};
-    std::cout << "rBase is a " << rBase.getName() << '\n';
+    Derived *derived{new Derived(5)};
+    Base *base{derived};
+
+    delete base;
 
     return 0;
 }
