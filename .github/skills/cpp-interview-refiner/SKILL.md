@@ -647,7 +647,7 @@ special characters removed.
 
 Save to the `Notes` folder where `notes.md` is located.
 
-Final confirmation to the user:
+Final summary to the user:
 
 ```markdown
 ✅ Written: chapter{N}_{slug}.md
