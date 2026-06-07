@@ -7713,4 +7713,160 @@ Note : A base class destructor should be either public and virtual, or protected
 
 ## Early binding and late binding
 
+### Early binding
+
+When a function is called, the compiler needs to determine which version of the function to call. If the function is not virtual, the compiler can determine which version of the function to call at compile time based on the type of the pointer or reference being used to call the function. This is known as early binding (or static binding).
+
+```cpp
+#include <iostream>
+
+struct Foo
+{
+    void printValue(int value)
+    {
+        std::cout << value;
+    }
+};
+
+void printValue(int value)
+{
+    std::cout << value;
+}
+
+int main()
+{
+    printValue(5);   // direct function call to printValue(int)
+
+    Foo f{};
+    f.printValue(5); // direct function call to Foo::printValue(int)
+    return 0;
+}
+```
+
+### Late binding
+
+In some cases, a function call can’t be resolved until runtime. In C++, this is sometimes known as late binding (or in the case of virtual function resolution, dynamic dispatch).
+
+In C++, one way to get late binding is to use function pointers.
+
+```cpp
+#include <iostream>
+
+void printValue(int value)
+{
+    std::cout << value << '\n';
+}
+
+int main()
+{
+    auto fcn { printValue }; // create a function pointer and make it point to function printValue
+    fcn(5);                  // invoke printValue indirectly through the function pointer
+
+    return 0;
+}
+```
+
+Another way to get late binding is to use virtual functions. When a virtual function is called through a pointer or reference to a base class, the version of the function that is executed is determined at runtime based on the actual type of the object being pointed to or referenced, rather than the type of the pointer or reference itself. This allows for polymorphism, which is the ability for objects of different types to be treated as objects of a common base type, and for the correct version of a function to be called based on the actual type of the object at runtime.
+
+## The virtual table
+
+The virtual table is a lookup table of functions used to resolve function calls in a dynamic/late binding manner. The virtual table sometimes goes by other names, such as “vtable”, “virtual function table”, “virtual method table”, or “dispatch table”. In C++, virtual function resolution is sometimes called dynamic dispatch.
+
+* Working of virtual table
+
+First, every class that uses virtual functions (or is derived from a class that uses virtual functions) has a corresponding virtual table. This table is simply a static array that the compiler sets up at compile time. A virtual table contains one entry for each virtual function that can be called by objects of the class. Each entry in this table is simply a function pointer that points to the most-derived function accessible by that class.
+
+Second, the compiler also adds a hidden pointer that is a member of the base class, which we will call *__vptr. *__vptr is set (automatically) when a class object is created so that it points to the virtual table for that class. Unlike the this pointer, which is actually a function parameter used by the compiler to resolve self-references, *__vptr is a real pointer member. Consequently, it makes each class object allocated bigger by the size of one pointer. It also means that *__vptr is inherited by derived classes, which is important.
+
+Let's understand the working of virtual table with an example:
+
+```cpp
+class Base
+{
+public:
+    virtual void function1() {};
+    virtual void function2() {};
+};
+
+class D1: public Base
+{
+public:
+    void function1() override {};
+};
+
+class D2: public Base
+{
+public:
+    void function2() override {};
+};
+
+```
+
+Because there are 3 classes here, the compiler will set up 3 virtual tables: one for Base, one for D1, and one for D2.
+
+The compiler also adds a hidden pointer member to the most base class that uses virtual functions. Although the compiler does this automatically, we’ll put it in the next example just to show where it’s added:
+
+```cpp
+class Base
+{
+public:
+    VirtualTable* __vptr;
+    virtual void function1() {};
+    virtual void function2() {};
+};
+
+class D1: public Base
+{
+public:
+    void function1() override {};
+};
+
+class D2: public Base
+{
+public:
+    void function2() override {};
+};
+```
+When a class object is created, *__vptr is set to point to the virtual table for that class. For example, when an object of type Base is created, *__vptr is set to point to the virtual table for Base. When objects of type D1 or D2 are constructed, *__vptr is set to point to the virtual table for D1 or D2 respectively.
+
+Now, let’s talk about how these virtual tables are filled out. Because there are only two virtual functions here, each virtual table will have two entries (one for function1() and one for function2()). Remember that when these virtual tables are filled out, each entry is filled out with the most-derived function an object of that class type can call.
+
+* The virtual table for Base objects is simple. An object of type Base can only access the members of Base. Base has no access to D1 or D2 functions. Consequently, the entry for function1 points to Base::function1() and the entry for function2 points to Base::function2().
+
+* The virtual table for D1 is slightly more complex. An object of type D1 can access members of both D1 and Base. However, D1 has overridden function1(), making D1::function1() more derived than Base::function1(). Consequently, the entry for function1 points to D1::function1(). D1 hasn’t overridden function2(), so the entry for function2 will point to Base::function2().
+
+* The virtual table for D2 is similar to D1, except the entry for function1 points to Base::function1(), and the entry for function2 points to D2::function2().
+
+![alt text](image-79.png)
+
+Now, consider what happens when we create an object of type D1:
+
+```cpp
+int main()
+{
+    D1 d1 {};
+}
+```
+Because d1 is a D1 object, d1 has its *__vptr set to the D1 virtual table.
+
+Now, let’s set a base pointer to D1:
+
+```cpp
+int main()
+{
+    D1 d1 {};
+    Base* dPtr = &d1;
+
+    return 0;
+}
+```
+
+Note that because dPtr is a base pointer, it only points to the Base portion of d1. However, also note that *__vptr is in the Base portion of the class, so dPtr has access to this pointer. Finally, note that dPtr->__vptr points to the D1 virtual table! Consequently, even though dPtr is of type Base*, it still has access to D1’s virtual table (through __vptr).
+
+So what happens when we try to call dPtr->function1()?
+
+First, the program recognizes that function1() is a virtual function. Second, the program uses dPtr->__vptr to get to D1’s virtual table. Third, it looks up which version of function1() to call in D1’s virtual table. This has been set to D1::function1(). Therefore, dPtr->function1() resolves to D1::function1()!
+
+
+
 
