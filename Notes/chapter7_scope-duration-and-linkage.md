@@ -3,456 +3,674 @@
 ---
 ## Local variables
 
-> 🧠 **In one sentence:** Scope determines where a variable can be seen, duration determines how long it lives, and linkage determines whether it can be shared across files.
+> 🧠 **In one sentence:** A local variable's scope is purely compile-time, but its linkage rules mean each instance is memory-independent and private to that block.
 
-- **Scope:** Scope is the region of the program where an identifier can be used. An identifier is said to be in scope from its point of declaration to the end of the block in which it is declared. Scope is a compile-time property, and trying to use an identifier when it is out of scope will result in a compile error.
-- **Linkage:** Linkage determines if multiple declarations of an identifier refer to the same identifier or not. Local variables have no linkage, meaning each declaration refers to a unique object.
-- **Duration:** Global variables are created when the program starts (before main() begins execution), and destroyed when it ends. This is called static duration. Variables with static duration are sometimes called static variables.
-- **Global Linkage:** Global variables have external linkage by default. This means that a declaration of the same identifier in a different scope refers to the same object.
+Scope defines where an identifier is valid in the program. It starts at the point of declaration and ends at the closing brace of its block. Since scope is checked at compile-time, using an identifier outside its block causes a compilation error.
+
+Linkage determines whether multiple declarations of the same name refer to the exact same object in memory. Local variables have **no linkage**, meaning every time you declare a local variable, you get a unique, independent object.
+
+Global variables have static duration. They are created before `main()` executes and destroyed when the program terminates. These are sometimes called static variables. By default, globals have **external linkage**, allowing other scopes to refer to the same object.
 
 ```cpp
-    // Original example: local variable linkage
-    int main()
+int main()
+{
+    int x { 2 }; // local variable, no linkage
+
     {
-        int x { 2 }; // local variable, no linkage
-
-        {
-            int x { 3 }; // this declaration of x refers to a different object than the previous x
-        }
-
-        return 0;
+        // this declaration of x refers to a different object than the previous x
+        int x { 3 }; 
     }
-// Output: none
+
+    return 0;
+}
 ```
 
-> ⚠️ **GOTCHA — Variable shadowing:**
-> If you declare a local variable in an inner block with the same name as one in an outer block (like `x` in the example), it "shadows" the outer variable. The outer variable becomes completely inaccessible until the inner block ends.
-> **What to say in an interview:** "I avoid variable shadowing by always compiling with `-Wshadow` to catch these bugs early."
+> ⚠️ **GOTCHA — Shadowing local variables:**
+> Declaring a local variable with the same name inside a nested block hides the outer variable. You lose access to the outer one until the inner block ends.
+> **What to say in an interview:** "Shadowing is legal but dangerous; I use `-Wshadow` to treat it as an error to prevent silent logic bugs."
 
 📊 **Quick comparison:**
 
-| | **Scope** | **Duration (Lifetime)** | **Linkage** |
-|---|---|---|---|
-| **What it rules** | Visibility (compile-time) | Existence (runtime) | Sharing across files (link-time) |
-| **Local variables** | Block scope | Automatic | No linkage |
-| **Global variables** | File/Global scope | Static | External (usually) |
+|                      | **Scope** | **Linkage** | **Duration** |
+|----------------------|-----------|-------------|--------------|
+| **What it means**    | Visibility to the compiler | Identity across translation units | Lifetime in memory |
+| **Local variables**  | Block scope | No linkage | Automatic (stack) |
+| **Global variables** | Global (file) scope | External (default) | Static |
+
+> 🔗 **See also:** Chapter 10 — Type Conversion (covers duration of temporary types)
 
 ---
 #### ❓ Interview Q&A
 
-**Q1: What is the difference between scope and lifetime?**
+**Q1 [🌐 All | 🟢 Any]: What does it mean for a local variable to have "no linkage"?**
 
-A: Scope is a compile-time concept specifying where a name is visible in the code. Lifetime (duration) is a runtime concept specifying how long the object actually sits in memory. A variable can be out of scope but still alive (e.g., dynamically allocated memory or a static local variable).
+A: It means the variable is completely independent of any other variable with the same name elsewhere in the program. Even if two different functions both declare `int count`, the compiler treats them as two separate objects with distinct memory addresses.
 
-**Q2: What does it mean for a local variable to have "no linkage"?**
+**Q2 [🔧 Product Co | 🟡 2yr]: If a global variable has static duration, why do we care about its linkage?**
 
-A: It means the name is strictly local. If you have a local variable `int x` in Function A and another `int x` in Function B, the linker never tries to merge them. They are completely independent entities.
+A: Static duration just guarantees the variable lives for the life of the program. Linkage guarantees whether two files can *share* that single instance (external linkage) or if each file gets its own hidden copy (internal linkage). Without linkage rules, multi-file programs would constantly fail to link.
 
-**Q3: What happens if I try to use a block-scoped variable outside its block?**
+**Q3 [🔧 Product Co | 🟡 2yr]: [🖥️ Output?] What does this print?**
 
-A: You get a compile error. The compiler strictly enforces scope. Once the closing brace `}` of the block is reached, the identifier goes out of scope and cannot be resolved, even if the memory hasn't been overwritten yet.
+```cpp
+#include <iostream>
+
+int x = 5;
+
+int main() {
+    int x = 10;
+    {
+        int x = 15;
+        std::cout << ::x << " " << x << " ";
+    }
+    std::cout << x;
+}
+```
+
+A: Prints `5 15 10`. The `::x` explicitly requests the global namespace variable (`5`). Inside the block, the innermost local `x` shadows the outer one (`15`). Once the block ends, the outer local `x` is visible again (`10`). Fix: Avoid variable shadowing altogether.
+
+**Q4 [⚡ HFT | 🔴 Senior]: Can a local variable have internal linkage?**
+
+A: No, local variables can never have internal linkage. They either have *no linkage* (standard local variables) or *no linkage but static duration* (when declared `static` inside a function, meaning they persist across calls but are still only visible inside that function).
+
+#### 🖥️ Snippet Drill — All Patterns
+
+> Every testable snippet pattern for this topic.
+> Cover the Answer, predict the result, then reveal.
+
 ---
-> 💡 **Interview tip:** Interviewers often ask "what's the difference between scope and lifetime?" Don't mix them up: scope is about names (compiler), lifetime is about memory (runtime).
 
+**Snippet 1 [🔧 Product Co | 🟡 2yr]: [❌ Won't compile?] Does this compile?**
+
+```cpp
+int main() {
+    int val = 10;
+    if (val > 5) {
+        int result = val * 2;
+    }
+    return result; 
+}
+```
+
+A: **Compile error.** `result` is declared inside the `if` block, so its scope ends at the closing brace. Returning it outside the block refers to an undeclared identifier. Fix: Move the declaration of `result` before the `if` statement.
+
+---
+
+> 💡 **Interview tip:** Interviewers often use scope shadowing in dry-run tracing tests. Always keep track of which brace depth you are currently in.
+
+---
 ## Internal linkage
 
-> 🧠 **In one sentence:** Internal linkage makes a global variable or function private to the translation unit (source file) it's defined in.
+> 🧠 **In one sentence:** Internal linkage keeps an identifier completely private to its translation unit, hiding it from the rest of the program and preventing linker conflicts.
 
-An identifier with internal linkage can be seen and used within a single translation unit, but it is not accessible from other translation units. This means that if two source files have identically named identifiers with internal linkage, those identifiers will be treated as independent (and do not result in an ODR violation for having duplicate definitions).
+An identifier with internal linkage can only be seen and used within the source file (translation unit) where it is defined. If you use internal linkage, two different files can define a variable or function with the exact same name, and the linker will treat them as independent objects. This is a common way to avoid One Definition Rule (ODR) violations.
 
-- Global variables can be given internal linkage by using the `static` keyword: Global variables with internal linkage are sometimes called internal variables.
-- Functions can also have internal linkage by using the `static` keyword: Functions with internal linkage are sometimes called internal functions.
-
-> 🗣️ **Say it out loud:**
-> "When an interviewer asks why I marked a global variable `static`, I'd say:
-> By making it static, I'm giving it internal linkage. This means the symbol isn't exposed to the linker. It prevents naming collisions if someone else writes a global variable with the exact same name in another file. It's essentially a way to create a private global variable for just one file. Here's a quick example to show that..."
+You give global variables and free functions internal linkage by marking them with the `static` keyword. These are referred to as internal variables or internal functions.
 
 ```cpp
-// Added example: Internal linkage using static
-#include <iostream>
+// Added example: Internal linkage
+// File1.cpp
+static int g_internal_count = 10; // Private to File1.cpp
 
-// This variable and function are private to this source file
-static int internal_counter = 0;
-
-static void increment() {
-    internal_counter++;
-}
+// File2.cpp
+static int g_internal_count = 50; // Private to File2.cpp, no conflict with File1
 
 int main() {
-    increment();
-    std::cout << internal_counter << '\n';
+    return 0;
 }
-// Output:
-// 1
 ```
+// Output: none (compiles smoothly without ODR errors)
+
+> ⚠️ **GOTCHA — Misusing `static` on globals in headers:**
+> If you put a `static` global variable in a header file and `#include` it in 5 source files, you create 5 independent copies of that variable. Modifying one copy won't update the others.
+> **What to say in an interview:** "I never put `static` data in headers; it creates hidden duplicates across translation units. I prefer unnamed namespaces or `inline` variables."
+
+📊 **Quick comparison:**
+
+|                      | **Internal Linkage (`static` global)** | **External Linkage (default global)** |
+|----------------------|----------------------------------------|---------------------------------------|
+| **Visibility**       | One translation unit                   | Entire program                        |
+| **Linker Conflicts** | Impossible                             | Happens if defined multiple times     |
+| **Use case**         | Helper functions, file-local data      | Shared application state              |
 
 ---
 #### ❓ Interview Q&A
 
-**Q1: What does the `static` keyword do to a global variable?**
+**Q1 [🌐 All | 🟢 Any]: What does the `static` keyword do when applied to a global variable?**
 
-A: At the global scope, `static` changes the variable's default external linkage to internal linkage. The variable is still allocated for the entire duration of the program, but its name is invisible outside the source file it was defined in.
+A: It changes the variable's linkage from external (the default) to internal. This means the variable name is not exported to the linker, keeping the variable strictly private to the `.cpp` file it was defined in.
 
-**Q2: Why is internal linkage important for large projects?**
+**Q2 [🔧 Product Co | 🟡 2yr]: If both internal linkage and unnamed namespaces provide translation-unit privacy, why prefer unnamed namespaces?**
 
-A: It prevents linker errors. In a large codebase, multiple files might use a common helper function name like `init()` or a variable like `max_retries`. If they have external linkage, the linker throws a multiple-definition error. Internal linkage isolates them.
+A: Unnamed namespaces are the modern C++ standard. `static` only works for variables and functions, while unnamed namespaces can also hide types (like classes and structs) from the global namespace. It provides a single, uniform way to encapsulate file-local implementation details.
 
-**Q3: Is there a modern alternative to using `static` for internal linkage?**
+**Q3 [🔧 Product Co | 🟡 2yr]: [🐛 Bug?] What is the logical bug here?**
 
-A: Yes, unnamed namespaces. Modern C++ heavily favors wrapping private translation-unit globals and functions in `namespace { }` instead of marking them all `static`.
+```cpp
+// math_utils.h
+static int helper_counter = 0;
+
+inline void add_counter() {
+    helper_counter++;
+}
+```
+
+A: **Hidden duplication.** Every `.cpp` file that includes `math_utils.h` gets its own private copy of `helper_counter`. If two different files call `add_counter()`, they are incrementing completely different variables. Fix: Use `inline` for the variable (C++17) or declare it `extern` and define it in exactly one `.cpp` file.
+
+**Q4 [⚡ HFT | 🔴 Senior]: What happens to the symbol table when you use internal linkage?**
+
+A: The compiler generates local symbols instead of global exported symbols in the object file. When the linker combines the object files, it ignores these local symbols during cross-file resolution, which is why naming collisions are avoided and link times can slightly improve.
+
+#### 🖥️ Snippet Drill — All Patterns
+
+> ✅ Q3 covers the only testable snippet pattern for this section.
+
 ---
-> 💡 **Interview tip:** "Static" is the most overloaded keyword in C++. If an interviewer asks what it does, clarify *where* it's being used: inside a function (changes duration), inside a class (changes association), or in global scope (changes linkage).
 
+> 💡 **Interview tip:** When asked about the `static` keyword, explicitly clarify that you know its three different meanings: inside a function (duration), on a global (linkage), and in a class (shared member).
+
+---
 ## External linkage and variable forward declarations
 
-> 🧠 **In one sentence:** External linkage allows an identifier to be shared across multiple translation units, usually accessed via a forward declaration using the `extern` keyword.
+> 🧠 **In one sentence:** External linkage allows an identifier to be shared across the entire program by defining it exactly once and forward-declaring it everywhere else using `extern`.
 
-An identifier with external linkage can be seen and used both from the file in which it is defined, and from other code files (via a forward declaration). Global variables with external linkage are sometimes called external variables.
+An identifier with external linkage is visible everywhere. Non-constant global variables have external linkage by default. However, to use that global variable in *another* file, you must tell the compiler it exists by using a forward declaration with the `extern` keyword. 
 
-> **Note:** `const` global variables have internal linkage by default. Therefore, to make a `const` global variable accessible from other translation units, we must explicitly declare it as `extern`.
+The `extern` keyword tells the compiler the variable's type and name, but it doesn't allocate memory or create a new object. It promises the linker that the object will be found elsewhere.
 
-> **Note:** To use a global variable defined in another translation unit, we must provide a forward declaration for it using the `extern` keyword. A variable forward declaration tells the compiler about the variable's type and name, but does not create a new instance of the variable.
-
-```cpp
-    // Original example: External linkage and extern
-    int g_x { 2 }; // non-constant globals are external by default (no need to use extern)
-
-    extern const int g_y { 3 }; // const globals can be defined as extern, making them external
-    extern constexpr int g_z { 3 }; // constexpr globals can be defined as extern, making them external (but this is pretty useless, see the warning in the next section)
-
-    int main()
-    {
-        return 0;
-    }
-// Output: none
-```
+> **Note:** Constant global variables (`const`) have internal linkage by default. To share a `const` global across files, you must explicitly declare it as `extern` during its actual definition, not just in its forward declaration. 
 
 ```cpp
-// Added example: Forward declaration
-#include <iostream>
+// File1.cpp
+int g_x { 2 };                          // non-constant, external by default
 
-// Forward declaration of a variable defined in another file
-extern int global_app_state; 
+extern const int g_y { 3 };             // const global forced to be external
+extern constexpr int g_z { 3 };         // constexpr global forced to be external
 
-int main() {
-    // We can use it here because the compiler trusts the linker will find it
-    std::cout << global_app_state << '\n';
+// File2.cpp
+extern int g_x;                         // Forward declaration to access g_x
+extern const int g_y;                   // Forward declaration to access g_y
+
+int main()
+{
+    return 0;
 }
 ```
 
-> ⚠️ **GOTCHA — ODR Violations with External Linkage:**
-> If you define (`int g_x = 5;`) an external variable in a header file, and include that header in multiple `.cpp` files, every file gets its own definition of `g_x`. The linker will fail with a "multiple definition" error.
-> **What to say in an interview:** "I never define external variables in headers. I declare them with `extern` in the header, and define them in exactly one `.cpp` file."
-
-📊 **Quick comparison:**
-
-| | **Internal Linkage (`static`)** | **External Linkage (`extern`)** |
-|---|---|---|
-| **Visibility** | One source file | Entire program |
-| **Linker behavior** | Symbol hidden | Symbol exported |
-| **Typical use** | Private helpers/state | Shared application state |
-| **Header file safety** | Safe (but duplicates memory) | Causes ODR violations if defined |
+> ⚠️ **GOTCHA — ODR Violation missing `extern`:**
+> If you put `int global_state = 0;` in a header file, every `.cpp` file gets a definition. The linker will throw an "ODR violation / multiple definition" error.
+> **What to say in an interview:** "Globals should be declared `extern` in a header, but defined (initialized) in exactly one `.cpp` file to satisfy the One Definition Rule."
 
 ---
 #### ❓ Interview Q&A
 
-**Q1: How do you share a global variable across multiple files?**
+**Q1 [🌐 All | 🟢 Any]: How do you share a single global variable across multiple source files?**
 
-A: You define the variable in exactly one `.cpp` file. Then, you place a forward declaration using the `extern` keyword in a header file, and include that header wherever you need access to the variable.
+A: In a header file, write a forward declaration using `extern type name;`. Include that header in files that need it. In exactly one `.cpp` file, provide the actual definition `type name = value;`. 
 
-**Q2: Why do `const` global variables default to internal linkage?**
+**Q2 [🔧 Product Co | 🟡 2yr]: Why do `const` globals default to internal linkage while regular globals default to external linkage?**
 
-A: C++ assumes that `const` values are likely to be used for compile-time optimization. If it had external linkage, defining a `const int max = 10;` in a header would cause multiple definition linker errors when included in multiple files. Internal linkage allows you to safely place `const` variables in headers.
+A: C++ heavily relies on replacing `const` variables with direct constant values at compile time. By making them internally linked by default, the compiler can safely optimize them without worrying about another file modifying or relying on the exact memory address. To override this, you must explicitly use `extern const`.
 
-**Q3: What happens if you declare something `extern` but forget to define it anywhere?**
+**Q3 [🔧 Product Co | 🟡 2yr]: [❌ Won't compile?] Will this link successfully?**
 
-A: Your code will compile cleanly, because the compiler trusts your `extern` promise. However, the build will fail at the link stage with an "unresolved external symbol" error.
+```cpp
+// config.h
+const int max_connections = 100;
+
+// server.cpp
+#include "config.h"
+
+// client.cpp
+#include "config.h"
+extern const int max_connections;
+```
+
+A: Yes, it links, but it usually behaves unexpectedly. Because `const` implies internal linkage, `server.cpp` and `client.cpp` get two different variables named `max_connections`. The `extern` in `client.cpp` promises an external symbol, which fails to match the internal one from the header. Fix: Declare it `inline const int` (C++17) or `static constexpr`.
+
+**Q4 [⚡ HFT | 🔴 Senior]: Is declaring `extern constexpr` ever useful?**
+
+A: It is generally useless and discouraged. `constexpr` implies the value must be known at compile time for constant expression evaluation. If you use `extern constexpr`, the compiler in other files cannot see the value, so it can't use it in contexts that require compile-time constants (like template parameters or array sizes). 
+
+#### 🖥️ Snippet Drill — All Patterns
+
+> Every testable snippet pattern for this topic.
+> Cover the Answer, predict the result, then reveal.
+
 ---
-> 💡 **Interview tip:** Be prepared to explain the difference between a declaration (telling the compiler a name exists) and a definition (actually allocating memory). `extern int x;` is a declaration. `int x;` is a definition.
 
+**Snippet 1 [🔧 Product Co | 🟡 2yr]: [💀 UB?] What linker issue occurs here?**
+
+```cpp
+// globals.h
+int g_counter = 0;
+
+// a.cpp
+#include "globals.h"
+
+// b.cpp
+#include "globals.h"
+
+int main() {}
+```
+
+A: **Multiple definition error.** `int g_counter = 0` is a definition. Including it in two `.cpp` files breaks the One Definition Rule (ODR). The linker will fail. Fix: Add `inline` (in C++17) or declare it `extern` and define it in one `.cpp` file.
+
+---
+
+**Snippet 2 [🏢 Service Co | 🟢 Any]: [❌ Won't compile?] What's wrong with this forward declaration?**
+
+```cpp
+// file1.cpp
+extern int value = 5;
+
+// file2.cpp
+extern int value = 10;
+```
+
+A: **Compile/Link error.** Adding an initialization (`= 5` or `= 10`) turns an `extern` declaration back into a full definition. This results in multiple definitions of `value`. Fix: Provide initialization in only one file, and use `extern int value;` without initialization in the other.
+
+---
+> 💡 **Interview tip:** External globals are often considered bad practice due to initialization order fiascos. Always mention singletons, dependency injection, or `inline` variables as safer alternatives.
+
+---
 ## Inline functions and variables
 
-> 🧠 **In one sentence:** Inline expansion is a compiler optimization that replaces a function call with the actual body of the function to save the overhead of jumping to another memory address.
+> 🧠 **In one sentence:** The `inline` keyword allows you to define a function or a variable in a header file without causing a multiple-definition linker error when included in multiple translation units.
 
-Inline expansion is a process where a function call is replaced by the code from the called function’s definition. This can improve performance by eliminating the overhead of a function call, especially for small functions that are called frequently.
+Historically, inline expansion was an optimizer hint replacing a function call with the actual function body to save call-overhead. However, inline expansion can cause executable bloat if overused.
 
-> **Note:** Inline expansion has its own potential cost: if the body of the function being expanded takes more instructions than the function call being replaced, then each inline expansion will cause the executable to grow larger. Larger executables tend to be slower (due to not fitting as well in memory caches).
-
-```cpp
-// Added example: Inline expansion concept
-#include <iostream>
-
-// A good candidate for inlining
-inline int square(int x) {
-    return x * x;
-}
-
-int main() {
-    // Compiler might replace this with: int result = 5 * 5;
-    int result = square(5); 
-    std::cout << result << '\n';
-}
-// Output:
-// 25
-```
-
----
-#### ❓ Interview Q&A
-
-**Q1: Does the `inline` keyword guarantee the compiler will inline the function?**
-
-A: No. It is merely a suggestion or hint to the compiler. Modern compilers are very smart and will often inline small functions even without the keyword, and might refuse to inline a massive function even if the keyword is present.
-
-**Q2: What is the trade-off of aggressive inlining?**
-
-A: Code bloat. Replacing every function call with the function's body increases the compiled binary size. If the binary spills out of the CPU's L1 instruction cache, the cache misses will negate all the speed gained by avoiding the function call.
-
-**Q3: Can you inline a recursive function?**
-
-A: A compiler might manually unroll a few levels of recursion if the depth is known at compile time, but it cannot infinitely inline a recursive function, as that would result in an infinitely sized executable.
----
-> 💡 **Interview tip:** Don't just say `inline` makes code faster. Top candidates always mention the danger of instruction cache misses caused by code bloat.
-
-### Modern inline functions and variables
-
-> 🧠 **In one sentence:** In modern C++, `inline` means "multiple identical definitions of this entity are allowed across translation units without violating the One Definition Rule."
-
-In modern C++, the term `inline` has evolved to mean “multiple definitions are allowed”. Thus, an inline function is one that is allowed to be defined in multiple translation units (without violating the ODR). This is particularly useful for functions defined in header files, which are typically included in multiple source files.
-
-Inline functions have two primary requirements:
-- The compiler needs to be able to see the full definition of an inline function in each translation unit where the function is used.
+In modern C++, `inline` means "multiple definitions are allowed." An inline function or variable can be defined in multiple translation units without violating the One Definition Rule (ODR). The linker simply merges all identical definitions into one. This is exactly what lets us define functions or variables directly inside header files.
 
 > 🗣️ **Say it out loud:**
-> "When asked why we need inline functions in headers, I'd say:
-> If you put a normal function definition in a header file, and include it in three different cpp files, the compiler produces three definitions. The linker will throw a multiple-definition error. But if you mark it `inline`, you're telling the linker 'I know there are duplicates, just pick one and drop the rest.' That's why class member functions defined inside the class body are implicitly inline."
+> "When an interviewer asks me about inline, I'd say:
+> Originally, `inline` was just a hint for the compiler to embed the function body directly. Today, compilers ignore that hint for optimization. Instead, the real purpose of `inline` is linkage—it relaxes the One Definition Rule, letting us define functions and variables directly in header files without angering the linker."
+
+The compiler must see the full definition of an inline function in each translation unit where it is used. Similar to functions, C++17 introduced inline variables, allowing global variables to be defined in headers trivially.
+
+> **Note:** Inline expansion has its own potential cost: if the body takes more instructions than the function call itself, expanding it everywhere increases binary size, hurting memory cache performance.
 
 ```cpp
-// Added example: Modern inline usage
-// helper.h
+// Added example: Inline Variables (C++17)
+// constants.h
 #pragma once
+// Defined directly in the header, merged gracefully by the linker.
+inline constexpr double gravity = 9.81;
 
-// Can be safely included in multiple .cpp files
-inline int get_default_port() {
-    return 8080;
-}
-```
-
----
-#### ❓ Interview Q&A
-
-**Q1: Why are member functions defined inside a class definition considered inline?**
-
-A: Because class definitions are placed in header files and included in multiple translation units. If those member functions weren't implicitly `inline`, they would cause ODR violations as soon as two files included the header.
-
-**Q2: What is the One Definition Rule (ODR)?**
-
-A: The ODR states that within any given translation unit, a variable, function, class, etc. can be defined only once. Across the entire program, normal variables and non-inline functions can also strictly have only one definition.
-
-**Q3: What happens if two files have different definitions for the same inline function?**
-
-A: It is Undefined Behavior. The linker is allowed to randomly pick one of them without warning you. Both files must see the exact same token sequence for the inline definition.
----
-> 💡 **Interview tip:** The modern, standard-compliant answer for "what does inline do?" is almost entirely about the One Definition Rule (ODR) and header files, not performance.
-
-### inline variables
-
-> 🧠 **In one sentence:** Introduced in C++17, `inline` variables allow global variables to be defined directly in header files without causing multiple-definition linker errors.
-
-Similar to inline functions, inline variables are allowed to be defined in multiple translation units without violating the ODR. This is useful for defining global variables in header files.
-
-```cpp
-// Added example: Inline variables (C++17)
+// main.cpp
+#include "constants.h"
 #include <iostream>
 
-// config.h (imagine this is a header included in many files)
-struct Config {
-    // C++17 inline variable: safe to define in a header
-    static inline int max_connections = 100;
-};
-
 int main() {
-    std::cout << Config::max_connections << '\n';
+    std::cout << gravity; 
+    return 0;
 }
-// Output:
-// 100
+// Output: 9.81
 ```
 
----
-#### ❓ Interview Q&A
-
-**Q1: Before C++17, how did we handle static class variables?**
-
-A: We had to declare them `static` inside the class definition in the header, and then provide a single out-of-line definition in exactly one `.cpp` file to allocate the memory.
-
-**Q2: How do `inline` variables solve the static class variable problem?**
-
-A: By marking the variable `inline` in the header, C++17 allows you to declare and define the variable in one step. The linker handles merging all the duplicate symbols into a single memory location.
-
-**Q3: Can `inline` variables be used for global namespace variables too?**
-
-A: Yes. You can define `inline int global_state = 0;` directly in a header file. It is the modern replacement for the old `extern` declaration plus `.cpp` definition dance for global variables.
----
-> 💡 **Interview tip:** Mentioning C++17 inline variables shows you write modern C++. It completely obsoletes a very annoying pre-C++17 boilerplate pattern.
-
-## Qualified and unqualified names
-
-> 🧠 **In one sentence:** A qualified name explicitly states which scope or namespace an identifier belongs to by using the scope resolution operator (`::`).
-
-A qualified name is a name that includes an associated scope. Most often, names are qualified with a namespace using the scope resolution operator (`::`).
-An unqualified name is used without any explicit scope prefix.
-
-```cpp
-// Added example: Qualified vs Unqualified
-#include <iostream>
-
-int value = 10; // Global namespace
-
-namespace App {
-    int value = 20; // App namespace
-}
-
-int main() {
-    int value = 30; // Local scope
-
-    std::cout << value << '\n';       // Unqualified: Local (30)
-    std::cout << App::value << '\n';  // Qualified: App namespace (20)
-    std::cout << ::value << '\n';     // Qualified: Global namespace (10)
-}
-// Output:
-// 30
-// 20
-// 10
-```
-
----
-#### ❓ Interview Q&A
-
-**Q1: What does `::name` with no left-hand side mean?**
-
-A: It explicitly forces the compiler to look in the global namespace for `name`, completely bypassing any local scopes or member variables that might be shadowing it.
-
-**Q2: Why do we use namespaces to qualify names?**
-
-A: To prevent naming collisions. If you write a physics library with a `Vector` class, and link a graphics library with its own `Vector` class, they would clash. Namespaces (`Physics::Vector` vs `Graphics::Vector`) completely isolate them.
-
-**Q3: When referencing a class member inside another member function, is it qualified or unqualified?**
-
-A: It is usually written as an unqualified name (just `my_var`), but the C++ compiler automatically qualifies it under the hood (treating it as `this->my_var` or `MyClass::my_var`).
----
-> 💡 **Interview tip:** Using `::` explicitly for the global namespace is a great trick to solve deep shadowing issues in large, legacy codebases.
-
-### Using-directives
-
-> 🧠 **In one sentence:** A using-directive dumps all the names from a specified namespace directly into the current scope, allowing you to use unqualified names.
-
-A using-directive (`using namespace MyNamespace;`) brings all the names from a namespace into the current scope.
-
-**Problems with using-directives:** Using-directives can lead to name conflicts if two namespaces contain identically named identifiers.
-
-```cpp
-    // Original example: using-directive conflicts
-    #include <iostream>
-
-    namespace A
-    {
-        int x { 10 };
-    }
-
-    namespace B
-    {
-        int x{ 20 };
-    }
-
-    int main()
-    {
-        using namespace A;
-        using namespace B;
-
-        // COMPILE ERROR: Reference to 'x' is ambiguous
-        // std::cout << x << '\n';
-
-        return 0;
-    }
-// Output: none
-```
-
-> ⚠️ **GOTCHA — `using namespace std` in headers:**
-> Putting `using namespace std;` in a header file forces that directive on every single `.cpp` file that includes your header. This pollutes the global namespace of the entire project and is universally considered a terrible practice.
-> **What to say in an interview:** "I never put using-directives in header files. I type out the fully qualified `std::` names there to keep the global namespace clean."
-
----
-#### ❓ Interview Q&A
-
-**Q1: Why is `using namespace std;` discouraged in professional C++?**
-
-A: The C++ Standard Library is massive. Dumping thousands of names (like `count`, `distance`, `vector`) into the global namespace guarantees that eventually one of your own local variables or functions will conflict with an STL name, causing confusing compiler errors.
-
-**Q2: Is there a safe way to use `using` instead of fully qualifying names?**
-
-A: Yes, use a *using-declaration* instead of a *using-directive*. Writing `using std::cout;` only brings in that one specific symbol, rather than the entire `std` library. Furthermore, you can restrict it to function scope rather than global scope.
-
-**Q3: If a collision happens due to a using-directive, can you still access the variables?**
-
-A: Yes. Even if `x` is ambiguous, you can explicitly qualify them as `A::x` and `B::x` to resolve the ambiguity.
----
-> 💡 **Interview tip:** Interviewers almost always react positively to the phrase "I avoid namespace pollution." It shows maturity and experience with large codebases.
-
-## Unnamed namespaces
-
-> 🧠 **In one sentence:** Wrapping code in a `namespace {}` without a name gives all the identifiers inside it internal linkage, making them invisible outside the current translation unit.
-
-An unnamed namespace is a namespace that does not have a name. Identifiers declared in an unnamed namespace have internal linkage by default. This means that they can only be accessed within the same translation unit.
-
-**Difference between unnamed namespaces and static variables/functions:** Both unnamed namespaces and static variables/functions provide internal linkage, but they do so in different ways. Unnamed namespaces group related identifiers together, while static variables/functions are declared individually.
-
-> 🗣️ **Say it out loud:**
-> "When asked how to hide implementation details in a `.cpp` file, I'd say:
-> I'd put them in an unnamed namespace. It's the modern, preferred C++ equivalent of using the `static` keyword on C-style global variables. It ensures that any helper types, functions, or variables I write are stripped of external linkage so they don't pollute the linker table or cause ODR violations with other files."
+> ⚠️ **GOTCHA — ODR Violation across inline definitions:**
+> If you define an `inline` function differently in two different translation units, the linker will arbitrarily pick one to use everywhere. This is undefined behavior.
+> **What to say in an interview:** "If I use inline, I make sure the definitions are strictly identical by placing it in a header file, rather than manually typing it in multiple source files."
 
 📊 **Quick comparison:**
 
-| | **Unnamed Namespace `namespace {}`** | **`static` keyword** |
-|---|---|---|
-| **Effect on linkage** | Internal linkage | Internal linkage |
-| **Applies to** | Variables, Functions, Classes, Types | Variables, Functions only |
-| **C++ Standard** | Modern C++ preference | Inherited from C |
-| **Convenience** | Groups multiple items cleanly | Requires tagging every item |
+|                      | **Traditional function**               | **Inline function/variable** |
+|----------------------|----------------------------------------|------------------------------|
+| **Header placement** | Generates ODR linker errors            | Perfectly safe               |
+| **Linker behavior**  | Expects exactly one definition         | Collapses duplicates into one|
 
 ---
 #### ❓ Interview Q&A
 
-**Q1: Can you put a class definition inside an unnamed namespace?**
+**Q1 [🌐 All | 🟢 Any]: Does the `inline` keyword guarantee that a function will be inlined for performance?**
 
-A: Yes. This is a massive advantage over `static`. You cannot mark a class or struct definition as `static`, but putting it in an unnamed namespace ensures the type itself is strictly internal to the `.cpp` file.
+A: No. It is merely a suggestion to the optimizer, which modern compilers typically ignore in favor of their own cost heuristics. Its primary modern role is simply to allow definitions in headers without violating the ODR.
 
-**Q2: Should you put an unnamed namespace in a header file?**
+**Q2 [🔧 Product Co | 🟡 2yr]: What is the difference between a `static` global variable in a header and an `inline` global variable in a header?**
 
-A: Absolutely not. If you do, every `.cpp` file that includes the header gets its own unique, invisible copy of everything in the namespace. This causes massive code bloat.
+A: A `static` variable creates a separate, independent copy of the variable for every `.cpp` file that includes the header. An `inline` variable (introduced in C++17) ensures there is only one shared instance across the entire program. `inline` is almost always what you actually want.
 
-**Q3: How does the compiler actually implement unnamed namespaces under the hood?**
+**Q3 [🔧 Product Co | 🟡 2yr]: [💀 UB?] What happens here when the program runs?**
 
-A: It acts as if it generated a unique namespace name for that specific translation unit (like `namespace __XYZ_123 { }`) and implicitly added a `using namespace __XYZ_123;` right after it so you can access the contents easily.
+```cpp
+// A.cpp
+inline int getValue() { return 10; }
+int callA() { return getValue(); }
+
+// B.cpp
+inline int getValue() { return 20; }
+int callB() { return getValue(); }
+```
+
+A: **Undefined Behavior.** The C++ standard dictates that all definitions of an `inline` function across the program must be identical. If they are different, no diagnostic is required, and the linker will silently choose one. Calling `callA()` and `callB()` might both return `10`, or both `20`. Fix: Only define inline functions once in a shared header.
+
+**Q4 [⚡ HFT | 🔴 Senior]: Does an inline function exist at a specific memory address?**
+
+A: Yes, if its address is taken anywhere in the program, the compiler must emit out-of-line code for it. The linker guarantees that taking the address of an inline function in different translation units will yield the exact same memory address.
+
+#### 🖥️ Snippet Drill — All Patterns
+
+> Every testable snippet pattern for this topic.
+> Cover the Answer, predict the result, then reveal.
+
 ---
-> 💡 **Interview tip:** "Unnamed space in a header file" is a classic trap question. The result is the exact opposite of what header files are meant to do (sharing). Know why it's a bad idea.
+
+**Snippet 1 [🔧 Product Co | 🟡 2yr]: [❌ Won't compile?] Will this link?**
+
+```cpp
+// Header.h
+inline int process_data(); 
+
+// App.cpp
+#include "Header.h"
+int main() { process_data(); }
+
+// Utils.cpp
+#include "Header.h"
+int process_data() { return 0; }
+```
+
+A: **Linker error (usually).** The compiler must see the *full definition* of an inline function in every translation unit where it is called. `App.cpp` only saw the declaration, making the compiler skip emitting a call and assume it would expand the body. Fix: Move the body of `process_data` into `Header.h`.
+
+---
+
+**Snippet 2 [🚀 HFT | 🔴 Senior]: [🖥️ Output?] What is the output address check?**
+
+```cpp
+// utils.h
+inline int shared_var = 42;  // C++17
+
+// file1.cpp
+#include "utils.h"
+int* getFile1Ptr() { return &shared_var; }
+
+// file2.cpp
+#include "utils.h"
+int* getFile2Ptr() { return &shared_var; }
+
+// main.cpp
+#include <iostream>
+extern int* getFile1Ptr();
+extern int* getFile2Ptr();
+
+int main() {
+    std::cout << (getFile1Ptr() == getFile2Ptr());
+}
+```
+
+A: `1` (true). The linker resolves all inline variables to point to the exact same unique object in memory. This is why `inline` variables perfectly replace the old `extern` forward declaration pattern for global state.
+
+---
+> 💡 **Interview tip:** If asked "How do you define a singleton in modern C++?", defining the static instance as an `inline` variable in the class declaration itself (C++17) is the cleanest answer.
+
+---
+## Qualified and unqualified names
+
+> 🧠 **In one sentence:** A qualified name explicitly states its namespace using the `::` operator, while an unqualified name relies on the current scope and `using` directives to figure out what it refers to.
+
+Names most often get qualified with a namespace using the scope resolution operator (`::`). For example, `std::cout` explicitly asks for `cout` from the `std` namespace, while `::foo` requests `foo` from the global namespace.
+
+A using-directive (`using namespace MyNamespace;`) brings all the names from a namespace into the current scope, allowing you to use unqualified names. However, this easily causes name conflicts if two namespaces contain identically named variables or functions.
+
+```cpp
+#include <iostream>
+
+namespace A {
+    int x { 10 };
+}
+
+namespace B {
+    int x { 20 };
+}
+
+int main() {
+    using namespace A;
+    using namespace B;
+
+    // COMPILE ERROR: Ambiguous access to 'x'
+    // std::cout << x << '\n';
+
+    // Fix: explicitly qualify the name
+    std::cout << A::x << '\n';
+
+    return 0;
+}
+// Output: 10
+```
+
+> ⚠️ **GOTCHA — `using namespace` in header files:**
+> Putting a `using namespace` directive in a header forces that namespace on every single file that includes the header. It irreversibly pollutes the global scope and guarantees collisions.
+> **What to say in an interview:** "I never put `using namespace` in a header. If I need it, I restrict it to a narrow block scope inside a `.cpp` file, or explicitly use `namespace::identifier`."
+
+---
+#### ❓ Interview Q&A
+
+**Q1 [🌐 All | 🟢 Any]: What happens if you define a local variable with the same name as a global variable, and you need to access the global one?**
+
+A: The local variable shadows the global one. To access the global variable, use the global scope resolution operator: `::variable_name`.
+
+**Q2 [🔧 Product Co | 🟡 2yr]: What is the difference between a using-declaration and a using-directive?**
+
+A: A using-declaration brings exactly one specific identifier into scope (e.g., `using std::cout;`). A using-directive dumps every single identifier from the entire namespace into the current scope (e.g., `using namespace std;`). The former is significantly safer.
+
+**Q3 [🏢 Service Co | 🟢 Any]: [❌ Won't compile?] Why won't this code compile?**
+
+```cpp
+#include <iostream>
+
+namespace data { int count = 5; }
+
+int main() {
+    int count = 10;
+    using namespace data;
+    std::cout << count;
+}
+```
+
+A: **Trick question—it DOES compile.** It prints `10`. The local variable `count` takes precedence over the `data::count` brought in by `using namespace data;`. There is no ambiguity error until you actually try to define a conflicting name in the identical scope level. Fix to print `5`: change to `data::count`.
+
+**Q4 [⚡ HFT | 🔴 Senior]: What is argument-dependent lookup (ADL / Koenig lookup)?**
+
+A: ADL allows unqualified function calls to find functions defined in the namespaces of their arguments. For example, `std::cout << "Hi"` calls `std::operator<<` without full qualification because `"Hi"` and `std::cout` are evaluated, and the compiler searches `std::` to find the matching operator.
+
+#### 🖥️ Snippet Drill — All Patterns
+
+> Every testable snippet pattern for this topic.
+> Cover the Answer, predict the result, then reveal.
+
+---
+
+**Snippet 1 [🔧 Product Co | 🟡 2yr]: [❌ Won't compile?] What's the error?**
+
+```cpp
+#include <vector>
+
+namespace math {
+    int max(int a, int b) { return a > b ? a : b; }
+}
+
+using namespace std;
+using namespace math;
+
+int main() {
+    int x = max(10, 20);
+}
+```
+
+A: **Ambiguous call to overloaded function.** `std::max` is brought in from `<vector>` (via `<algorithm>` usually) and `math::max` is brought in from `namespace math`. Because both are matched and unqualified, the compiler halts. Fix: `math::max(10, 20)`.
+
+---
+
+**Snippet 2 [🌐 All | 🟢 Any]: [🖥️ Output?] What prints?**
+
+```cpp
+#include <iostream>
+
+int val = 99;
+
+int main() {
+    int val = 5;
+    {
+        int val = 1;
+        std::cout << ::val;
+    }
+}
+```
+
+A: `99`. The `::` scope resolution operator with nothing before it forces the compiler to look in the global namespace, entirely ignoring all local variables named `val`.
+
+---
+
+> 💡 **Interview tip:** The standard advice for `#include <bits/stdc++.h>` combined with `using namespace std;` in competitive programming is heavily penalized in production coding interviews. Warn against it.
+
+---
+## Unnamed namespaces
+
+> 🧠 **In one sentence:** Wrapping functions and variables in an unnamed namespace restricts their linkage to that single translation unit, safely replacing the old C-style `static` keyword.
+
+An unnamed namespace is an anonymous block that implicitly ensures everything inside it has internal linkage. Any variables, functions, or classes declared in it can only be accessed by the specific `.cpp` file containing that namespace.
+
+Both unnamed namespaces and `static` symbols provide internal linkage, but in different ways. `static` must be applied individually to variables or functions. Unnamed namespaces group related identifiers together and can also encapsulate custom structure/class definitions—something `static` cannot do.
+
+```cpp
+// Added example: Unnamed namespace
+#include <iostream>
+
+namespace {
+    // Both variables and classes are strictly private to this file
+    const int MAX_USERS = 50;
+
+    class InternalConnection {
+    public:
+        void start() { std::cout << "Started " << MAX_USERS; }
+    };
+}
+
+int main() {
+    InternalConnection conn;
+    conn.start();
+    return 0;
+}
+// Output: Started 50
+```
+
+> ⚠️ **GOTCHA — Unnamed namespaces in headers:**
+> If you put an unnamed namespace in a `.h` file, every `.cpp` file that includes it gets a completely duplicated, independent set of those symbols.
+> **What to say in an interview:** "Unnamed namespaces belong exclusively in `.cpp` files to hide implementation details. Putting them in headers silently bloats the binary with duplicated dead code."
+
+---
+#### ❓ Interview Q&A
+
+**Q1 [🌐 All | 🟢 Any]: What is the modern C++ alternative to `static` global functions?**
+
+A: The unnamed namespace (or anonymous namespace). Any identifier inside it gets internal linkage automatically.
+
+**Q2 [🔧 Product Co | 🟡 2yr]: If `static` works fine for hiding global integers, why did C++ add unnamed namespaces?**
+
+A: `static` only works for variables and functions. It cannot give internal linkage to user-defined types (like classes or structs). An unnamed namespace unifies this—giving internal linkage to types, variables, and functions alike.
+
+**Q3 [🔧 Product Co | 🟡 2yr]: [🖥️ Output?] Will this link?**
+
+```cpp
+// File1.cpp
+namespace { int priority = 1; }
+int getPriority() { return priority; }
+
+// File2.cpp
+namespace { int priority = 2; }
+int fetchPriority() { return priority; }
+
+// main.cpp
+#include <iostream>
+extern int getPriority();
+extern int fetchPriority();
+int main() {
+    std::cout << getPriority() << fetchPriority();
+}
+```
+
+A: Yes, it links and prints `12`. Because each `priority` is wrapped in an unnamed namespace, they both get internal linkage. They do not conflict, allowing each translation unit to maintain its own independent unexported state.
+
+**Q4 [⚡ HFT | 🔴 Senior]: Technically, an unnamed namespace gives external linkage to the namespace itself but unique identity per translation unit. Why does this matter?**
+
+A: Because the namespace identifier is globally unique per translation unit, the templates instantiated using types from an unnamed namespace get unique instantiations. In C++11, types with internal linkage became legal template parameters specifically because unnamed namespaces behave this way.
+
+#### 🖥️ Snippet Drill — All Patterns
+
+> Every testable snippet pattern for this topic.
+> Cover the Answer, predict the result, then reveal.
+
+---
+
+**Snippet 1 [🔧 Product Co | 🟡 2yr]: [❌ Won't compile?] Can another file access this struct?**
+
+```cpp
+// Database.cpp
+namespace {
+    struct SecretKey {
+        int id = 42;
+    };
+}
+
+void process() { SecretKey k; }
+```
+
+A: **No, compile/link error for others.** Even outside files that declare `extern struct SecretKey;` or try to resolve it will fail. The compiler mangles the name of `SecretKey` using a uniquely generated namespace token for `Database.cpp`, making it impossible for the linker to match it anywhere else.
+
+---
+> 💡 **Interview tip:** Mentioning that you use unnamed namespaces for helper classes inside your `.cpp` source files shows strong adherence to encapsulation and clean dependency architecture.
 
 ---
 
 ## 📖 Chapter Vocabulary
 
 | Term | One-line definition |
-|---|---|
-| Scope | The region of source code where an identifier is visible and valid |
-| Linkage | The linker's rules for merging or keeping identifiers isolated across files |
-| Duration / Lifetime | The runtime period during which a variable holds memory |
-| ODR (One Definition Rule) | Rule stating you can only define a variable/function once per program (with few exceptions) |
-| Internal linkage | Symbol is completely private to its translation unit |
-| External linkage | Symbol is accessible across the entire program via the linker |
-| Translation unit | A single `.cpp` file along with all the headers it `#include`s |
-| Forward declaration | Telling the compiler a name exists before it is defined (`extern`) |
-| Inline expansion | Compiler optimization that replaces a call with the function's actual body |
-| `inline` variable/function | Allows multiple identical definitions across translation units (avoids ODR errors) |
-| Qualified name | An identifier accessed specifically via its scope (`std::cout`) |
-| Using-directive | Pollutes current scope with all identifiers from a namespace (`using namespace X`) |
-| Unnamed namespace | Creates a block of code with internal linkage, preferred over `static` |
+|------|---------------------|
+| **Scope** | The compile-time region where a variable name is visible |
+| **Duration (lifetime)**| How long a variable survives in memory (automatic, static, dynamic) |
+| **Linkage** | Linker-level identity: allows identical names in different scopes to refer to the same object |
+| **No Linkage** | Independent variable; isolated from all other variables of the same name (e.g., local vars) |
+| **Internal Linkage**| Symbol is visible only in its own translation unit (file) |
+| **External Linkage**| Symbol can be shared across the entire program via the linker |
+| **`static` (Linkage)** | Applied to globals, restricts them to internal linkage |
+| **`extern`** | Forward-declares a variable, telling the linker to find the definition elsewhere |
+| **`inline` (Modern)** | Allows identical full definitions in multiple translation units without violating ODR |
+| **ODR** | One Definition Rule: every variable/function must have exactly one definition program-wide |
+| **Using-directive** | Brings all identifiers of a namespace into the current scope (e.g., `using namespace std;`) |
+| **Using-declaration** | Brings specifically one identifier into scope (e.g., `using std::cout;`) |
+| **Unnamed namespace** | An anonymous block giving everything inside it internal linkage automatically |
+| **Translation Unit** | A single `.cpp` file along with all the headers it includes |
 
 ---
+
+## 🖥️ Snippet Patterns — Full Coverage
+
+> Complete snippet coverage for this chapter.
+> Includes Q3 from every section AND every additional pattern from the
+> Snippet Drill blocks. This table is the full exam paper for this chapter.
+> Cover the Answer column, predict the result, then reveal.
+
+| #  | Section | Snippet summary | Type | Tag | Answer |
+|----|---------|-----------------|------|-----|--------|
+| 1 | Local variables | Nested shadow variable scope reset | 🖥️ | 🔧 | Prints global `::x`, inner `x`, outer `x` |
+| 2 | Local variables | Returning variable out of block scope | ❌ | 🔧 | Compile error — undeclared identifier |
+| 3 | Internal linkage | `static` counter in header duplicated | 🐛 | 🔧 | Duplicated memory — each translation unit increments its own |
+| 4 | External linkage | `const` globals linking across files | ❌ | 🔧 | Link error or unexpected shadowing — const implies internal linkage |
+| 5 | External linkage | Multiple definitions in header | 💀 | 🔧 | Link error — ODR violation |
+| 6 | External linkage | `extern` with initialization | ❌ | 🏢 | Compile/Link error — initialization forces definition |
+| 7 | Inline | ODR violation with different inline bodies | 💀 | 🔧 | Undefined behavior — compiler silently picks one |
+| 8 | Inline | Missing inline body in same TU | ❌ | 🔧 | Link error — compiler expects inline body to be visible |
+| 9 | Inline | Inline global variable address eq | 🖥️ | 🚀 | True — linker shares one instance uniquely |
+| 10 | Qualified names | Shadowing with `using namespace` | ❌ | 🏢 | Output `10` — no ambiguity unless same scope depth |
+| 11 | Qualified names | Ambiguous `std::max` vs `math::max` | ❌ | 🔧 | Compile err — ambiguous overloaded function call |
+| 12 | Qualified names | Global resolution `::val` | 🖥️ | 🌐 | Output global overriding local shadow |
+| 13 | Unnamed namespaces| Same vars inside unnamed ns across files | 🖥️ | 🔧 | Output `12` — internally linked so safely private |
+| 14 | Unnamed namespaces| Accessing unnamed ns struct externally | ❌ | 🔧 | Link error — uniquely mangled namespace barrier |
+
+**Top 3 fail points for 2-year engineers in this chapter:**
+1. Using `static` on globals in `.h` files: They think it hides the state, but it secretly creates memory-isolated duplicates of the variable in every file.
+2. Forgetting `extern`: Realizing that `const int` defaults to internal linkage, causing silent failures when sharing configuration files. 
+3. Understanding `inline` variables: Not knowing that C++17 `inline` eliminates the need for `.cpp` singleton boilerplate. 
+
+**Sections with only one testable snippet pattern:**
+- Internal linkage — Q3 is complete coverage; confirmed by Snippet Drill block.

@@ -1,8 +1,5 @@
 # Chapter 10: Type Conversion, Type Aliases, and Type Deduction
 
-> 🎯 **Target audience:** 2-year C++ engineer | Indian product companies
-> **Company focus:** [🌐 All] [🔧 Product Co] [⚡ HFT]
-> **Snippet coverage:** exhaustive — every testable pattern included
 ---
 
 ## What is type conversion?
