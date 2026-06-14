@@ -7644,6 +7644,10 @@ Now the interesting case. We then call b->getThis(). Variable b is a Base pointe
 
 ## Virtual destructors, virtual assignment, and overriding virtualization
 
+Question: Why do we need virtual destructors?
+
+When you delete an object through a pointer to a base class, if the base class destructor is not virtual, the behavior is undefined. This is because the destructor for the derived class will not be called, which can lead to resource leaks and other issues if the derived class has any resources that need to be released in its destructor.
+
 ```cpp
 #include <iostream>
 class Base
@@ -7867,6 +7871,393 @@ So what happens when we try to call dPtr->function1()?
 
 First, the program recognizes that function1() is a virtual function. Second, the program uses dPtr->__vptr to get to D1’s virtual table. Third, it looks up which version of function1() to call in D1’s virtual table. This has been set to D1::function1(). Therefore, dPtr->function1() resolves to D1::function1()!
 
+## Pure virtual functions, abstract base classes, and interface classes
 
+C++ allows you to create a special kind of virtual function called a pure virtual function (or abstract function) that has no body at all! A pure virtual function simply acts as a placeholder that is meant to be redefined by derived classes.
 
+To create a pure virtual function, rather than define a body for the function, we simply assign the function the value 0.
 
+```cpp
+#include <string_view>
+
+class Base
+{
+public:
+    std::string_view sayHi() const { return "Hi"; } // a normal non-virtual function
+
+    virtual std::string_view getName() const { return "Base"; } // a normal virtual function
+
+    virtual int getValue() const = 0; // a pure virtual function
+
+    int doSomething() = 0; // Compile error: can not set non-virtual functions to 0
+};
+```
+
+Using a pure virtual function has two main consequences: First, any class with one or more pure virtual functions becomes an abstract base class, which means that it can not be instantiated! Consider what would happen if we could create an instance of Base:
+
+```cpp
+int main()
+{
+    Base base {}; // We can't instantiate an abstract base class, but for the sake of example, pretend this was allowed
+    base.getValue(); // what would this do?
+
+    return 0;
+}
+```
+Second, any derived class must define a body for this function, or that derived class will be considered an abstract base class as well.
+
+Let's study this with an example:
+
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+
+class Animal
+{
+protected:
+    std::string m_name {};
+
+    // We're making this constructor protected because
+    // we don't want people creating Animal objects directly,
+    // but we still want derived classes to be able to use it.
+    Animal(std::string_view name)
+        : m_name{ name }
+    {
+    }
+
+public:
+    const std::string& getName() const { return m_name; }
+    virtual std::string_view speak() const { return "???"; }
+
+    virtual ~Animal() = default;
+};
+
+class Cow : public Animal
+{
+public:
+    Cow(std::string_view name)
+        : Animal{ name }
+    {
+    }
+
+    // We forgot to redefine speak
+};
+
+int main()
+{
+    Cow cow{"Betsy"};
+    std::cout << cow.getName() << " says " << cow.speak() << '\n';
+
+    return 0;
+}
+```
+
+output:
+
+```text
+Betsy says ???
+```
+
+What happened? We forgot to redefine function speak(), so cow.Speak() resolved to Animal.speak(), which isn’t what we wanted.
+
+To prevent this from happening, we can make speak() a pure virtual function. This will make Animal an abstract base class, which means that we can not create an instance of Animal. It also means that any derived class must redefine speak(), or that derived class will also be considered an abstract base class.
+
+```cpp
+#include <string>
+#include <string_view>
+
+class Animal // This Animal is an abstract base class
+{
+protected:
+    std::string m_name {};
+
+public:
+    Animal(std::string_view name)
+        : m_name{ name }
+    {
+    }
+
+    const std::string& getName() const { return m_name; }
+    virtual std::string_view speak() const = 0; // note that speak is now a pure virtual function
+
+    virtual ~Animal() = default;
+};
+
+class Cow: public Animal
+{
+public:
+    Cow(std::string_view name)
+        : Animal{ name }
+    {
+    }
+
+    // We forgot to redefine speak
+};
+
+int main()
+{
+    Cow cow{ "Betsy" };
+    std::cout << cow.getName() << " says " << cow.speak() << '\n';
+
+    return 0;
+}
+```
+
+output:
+
+```text
+prog.cc:35:9: error: variable type 'Cow' is an abstract class
+   35 |     Cow cow{ "Betsy" };
+      |         ^
+prog.cc:17:30: note: unimplemented pure virtual method 'speak' in 'Cow'
+   17 |     virtual std::string_view speak() const = 0; // note that speak is now a pure virtual function
+      |                              ^ 
+```
+
+There are a couple of things to note here. First, speak() is now a pure virtual function. This means Animal is now an abstract base class, and can not be instantiated. Consequently, we do not need to make the constructor protected any longer (though it doesn’t hurt). Second, because our Cow class was derived from Animal, but we did not define Cow::speak(), Cow is also an abstract base class. Now when we try to compile this code:
+
+A pure virtual function is useful when we have a function that we want to put in the base class, but only the derived classes know what it should return. A pure virtual function makes it so the base class can not be instantiated, and the derived classes are forced to define these functions before they can be instantiated. This helps ensure the derived classes do not forget to redefine functions that the base class was expecting them to.
+
+One more thing, we can define a pure virtual function with a body. This is useful when we want to provide some default behavior for the function, but still want to force derived classes to override it or simply want to be able to call the base version of the function from derived classes.
+
+* Destructors can be pure virtual, but they must have a body
+
+## Interface classes
+
+An interface class is a class that has no member variables, and where all of the functions are pure virtual! Interfaces are useful when you want to define the functionality that derived classes must implement, but leave the details of how the derived class implements that functionality entirely up to the derived class.
+
+```cpp
+#include <string_view>
+
+class IErrorLog
+{
+public:
+    virtual bool openLog(std::string_view filename) = 0;
+    virtual bool closeLog() = 0;
+
+    virtual bool writeError(std::string_view errorMessage) = 0;
+
+    virtual ~IErrorLog() {} // make a virtual destructor in case we delete an IErrorLog pointer, so the proper derived destructor is called
+};
+```
+
+## Virtual base classes
+
+The diamond problem
+
+```cpp
+#include <iostream>
+
+class PoweredDevice
+{
+public:
+    PoweredDevice(int power)
+    {
+		std::cout << "PoweredDevice: " << power << '\n';
+    }
+};
+
+class Scanner: public PoweredDevice
+{
+public:
+    Scanner(int scanner, int power)
+        : PoweredDevice{ power }
+    {
+		std::cout << "Scanner: " << scanner << '\n';
+    }
+};
+
+class Printer: public PoweredDevice
+{
+public:
+    Printer(int printer, int power)
+        : PoweredDevice{ power }
+    {
+		std::cout << "Printer: " << printer << '\n';
+    }
+};
+
+class Copier: public Scanner, public Printer
+{
+public:
+    Copier(int scanner, int printer, int power)
+        : Scanner{ scanner, power }, Printer{ printer, power }
+    {
+    }
+};
+
+```
+Although we expect it is multiple inheritance, but the problem is that Copier actually contains two PoweredDevice subobjects: one from Scanner and one from Printer. Consequently, when we create a Copier object, we end up calling the PoweredDevice constructor twice, which is not what we wanted.
+
+Expected :- ![alt text](image-80.png)
+Actual :- ![alt text](image-81.png)
+
+```cpp
+PoweredDevice: 3
+Scanner: 1
+PoweredDevice: 3
+Printer: 2
+```
+
+* Virtual base classes
+
+To share a base class, simply insert the “virtual” keyword in the inheritance list of the derived class. This creates what is called a virtual base class, which means there is only one base object. The base object is shared between all objects in the inheritance tree and it is only constructed once. Question arises, who will construct the base class? The answer is that the most derived class is responsible for constructing the virtual base class. In this case, Copier is the most derived class, so it is responsible for constructing PoweredDevice.
+
+```cpp
+#include <iostream>
+
+class PoweredDevice
+{
+public:
+    PoweredDevice(int power)
+    {
+		std::cout << "PoweredDevice: " << power << '\n';
+    }
+};
+
+class Scanner: virtual public PoweredDevice // note: PoweredDevice is now a virtual base class
+{
+public:
+    Scanner(int scanner, int power)
+        : PoweredDevice{ power } // this line is required to create Scanner objects, but ignored in this case
+    {
+		std::cout << "Scanner: " << scanner << '\n';
+    }
+};
+
+class Printer: virtual public PoweredDevice // note: PoweredDevice is now a virtual base class
+{
+public:
+    Printer(int printer, int power)
+        : PoweredDevice{ power } // this line is required to create Printer objects, but ignored in this case
+    {
+		std::cout << "Printer: " << printer << '\n';
+    }
+};
+
+class Copier: public Scanner, public Printer
+{
+public:
+    Copier(int scanner, int printer, int power)
+        : PoweredDevice{ power }, // PoweredDevice is constructed here
+        Scanner{ scanner, power }, Printer{ printer, power }
+    {
+    }
+};
+
+output:
+
+```text
+PoweredDevice: 3
+Scanner: 1
+Printer: 2
+```
+
+## Object slicing
+
+```cpp
+#include <iostream>
+#include <string_view>
+
+class Base
+{
+protected:
+    int m_value{};
+
+public:
+    Base(int value)
+        : m_value{ value }
+    {
+    }
+
+    virtual ~Base() = default;
+
+    virtual std::string_view getName() const { return "Base"; }
+    int getValue() const { return m_value; }
+};
+
+class Derived: public Base
+{
+public:
+    Derived(int value)
+        : Base{ value }
+    {
+    }
+
+   std::string_view getName() const override { return "Derived"; }
+};
+
+int main()
+{
+    Derived derived{ 5 };
+    std::cout << "derived is a " << derived.getName() << " and has value " << derived.getValue() << '\n';
+
+    Base& ref{ derived };
+    std::cout << "ref is a " << ref.getName() << " and has value " << ref.getValue() << '\n';
+
+    Base* ptr{ &derived };
+    std::cout << "ptr is a " << ptr->getName() << " and has value " << ptr->getValue() << '\n';
+
+    return 0;
+}
+```
+
+output:
+
+```text
+derived is a Derived and has value 5
+ref is a Derived and has value 5
+ptr is a Derived and has value 5
+```
+
+But what happens if instead of setting a Base reference or pointer to a Derived object, we simply assign a Derived object to a Base object?
+
+```cpp
+int main()
+{
+    Derived derived{ 5 };
+    Base base{ derived }; // what happens here?
+    std::cout << "base is a " << base.getName() << " and has value " << base.getValue() << '\n';
+
+    return 0;
+}
+```
+
+Remember that derived has a Base part and a Derived part. When we assign a Derived object to a Base object, only the Base portion of the Derived object is copied. The Derived portion is not. In the example above, base receives a copy of the Base portion of derived, but not the Derived portion. That Derived portion has effectively been “sliced off”. Consequently, the assigning of a Derived class object to a Base class object is called object slicing (or slicing for short).
+
+output:
+
+```text
+base is a Base and has value 5
+```
+### Slicing vectors (Most common case of slicing)
+
+```cpp
+#include <vector>
+
+int main()
+{
+	std::vector<Base> v{};
+	v.push_back(Base{ 5 });    // add a Base object to our vector
+	v.push_back(Derived{ 6 }); // add a Derived object to our vector
+
+        // Print out all of the elements in our vector
+	for (const auto& element : v)
+		std::cout << "I am a " << element.getName() << " with value " << element.getValue() << '\n';
+
+	return 0;
+}
+```
+output:
+
+```text
+I am a Base with value 5
+I am a Base with value 6
+```
+
+## Dynamic casting
+
+### The need for dynamic_cast
+
+When dealing with polymorphism, you’ll often encounter cases where you have a pointer to a base class, but you want to access some information that exists only in a derived class.
