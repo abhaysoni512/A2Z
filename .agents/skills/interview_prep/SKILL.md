@@ -55,14 +55,16 @@ Read each identified markdown file using `view_file`. Extract:
 - **Quiz questions** from summary files
 - **Relationships** to other C++ topics (e.g., how move semantics relates to RAII, how virtual functions relate to polymorphism)
 
-## Step 3: Generate the Interview Preparation Artifact
+## Step 3: Generate the Interview Preparation File
 
-Create an artifact markdown file at:
+Create a markdown file in the workspace's `InterviewQuestions` directory:
 ```
-<artifactDir>/<topic_number>_interview_prep.md
+InterviewQuestions/<topic_number>.md
 ```
 
-The artifact **MUST** follow this exact structure:
+For example: `InterviewQuestions/22_smart_pointers.md`
+
+The file **MUST** follow this exact structure:
 
 ---
 
