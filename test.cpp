@@ -1,42 +1,43 @@
+#include <string>
+#include <string_view>
 #include <iostream>
-class Base
+
+class Animal // This Animal is an abstract base class
 {
+protected:
+    std::string m_name{};
+
 public:
-    Base()
+    Animal(std::string_view name)
+        : m_name{name}
     {
-        std::cout << "Calling Base()\n";
     }
-    virtual ~Base() // note: virtual
-    {
-        std::cout << "Calling ~Base()\n";
-    }
+
+    const std::string &getName() const { return m_name; }
+    virtual std::string_view speak() const = 0; // note that speak is now a pure virtual function
+
+    virtual ~Animal() = default;
 };
 
-class Derived : public Base
+class Cow : public Animal
 {
-private:
-    int *m_array{};
-
 public:
-    Derived(int length)
-        : m_array{new int[length]}
+    Cow(std::string_view name)
+        : Animal{name}
     {
-        std::cout << "Calling Derived()\n";
     }
 
-    virtual ~Derived() // note: virtual
+    virtual std::string_view speak() const override // We need to redefine speak
     {
-        std::cout << "Calling ~Derived()\n";
-        delete[] m_array;
+        return "Moo";
     }
 };
 
 int main()
 {
-    Derived *derived{new Derived(5)};
-    Base *base{derived};
-
-    delete base;
+    Animal dog{"Rover"};
+    Cow cow{"Betsy"};
+    std::cout << cow.getName() << " says " << cow.speak() << '\n';
 
     return 0;
 }

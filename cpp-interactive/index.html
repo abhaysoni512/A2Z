@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>C++ Branching Lab</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="C++ Branching Lab home">
+          <span class="brand-mark">C++</span>
+          <span>
+            <strong>C++ Branching Lab</strong>
+            <small>interactive modern C++ practice</small>
+          </span>
+        </a>
+        <nav class="top-actions" aria-label="Primary">
+          <button class="icon-button" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+            <span aria-hidden="true">T</span>
+          </button>
+          <button class="ghost-button" id="resetProgress" type="button">Reset progress</button>
+        </nav>
+      </header>
+
+      <main id="top" class="workspace">
+        <aside class="sidebar" aria-label="Curriculum">
+          <div class="sidebar-head">
+            <p class="eyebrow">curriculum</p>
+            <h1>Choose a branch</h1>
+            <div class="progress-shell" aria-label="Course progress">
+              <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <p id="progressText" class="muted">0 missions complete</p>
+          </div>
+          <div class="track-tabs" role="tablist" aria-label="Topic filters">
+            <button class="tab active" data-filter="all" type="button">All</button>
+            <button class="tab" data-filter="core" type="button">Core</button>
+            <button class="tab" data-filter="oop" type="button">OOP</button>
+            <button class="tab" data-filter="advanced" type="button">Advanced</button>
+          </div>
+          <div id="topicList" class="topic-list"></div>
+        </aside>
+
+        <section class="lesson-panel" aria-label="Lesson">
+          <div class="lesson-toolbar">
+            <div>
+              <p id="lessonMeta" class="eyebrow">mission</p>
+              <h2 id="lessonTitle">Loading mission</h2>
+            </div>
+            <div class="lesson-nav" aria-label="Lesson navigation">
+              <button class="icon-button" id="prevLesson" type="button" title="Previous mission" aria-label="Previous mission">&lt;</button>
+              <button class="icon-button" id="nextLesson" type="button" title="Next mission" aria-label="Next mission">&gt;</button>
+            </div>
+          </div>
+
+          <div class="mission-grid">
+            <article class="mission-copy">
+              <p id="lessonIntro"></p>
+              <div id="checklist" class="checklist"></div>
+              <div class="hint-row">
+                <button class="tool-button" id="hintButton" type="button">Hint</button>
+                <button class="tool-button primary" id="runButton" type="button">Run code</button>
+              </div>
+              <p id="hintText" class="hint-text" hidden></p>
+            </article>
+
+            <article class="visual-stage" aria-label="Concept visualization">
+              <div class="stage-header">
+                <span id="visualTitle">Runtime model</span>
+                <span id="visualBadge" class="pill">ready</span>
+              </div>
+              <div id="visualCanvas" class="visual-canvas"></div>
+            </article>
+          </div>
+
+          <div class="editor-shell">
+            <div class="editor-top">
+              <span id="fileName">main.cpp</span>
+              <div class="editor-actions">
+                <button class="icon-button" id="resetCode" type="button" title="Reset code" aria-label="Reset code">R</button>
+                <button class="icon-button" id="showAnswer" type="button" title="Show answer" aria-label="Show answer">OK</button>
+              </div>
+            </div>
+            <textarea id="codeEditor" spellcheck="false" aria-label="C++ code editor"></textarea>
+          </div>
+        </section>
+
+        <aside class="terminal-panel" aria-label="Terminal and results">
+          <section class="terminal-card">
+            <div class="terminal-title">
+              <span>Command console</span>
+              <span class="status-dot"></span>
+            </div>
+            <div id="terminalLog" class="terminal-log" aria-live="polite"></div>
+            <form id="commandForm" class="command-form">
+              <span>$</span>
+              <input id="commandInput" autocomplete="off" aria-label="Command input" placeholder="help">
+            </form>
+          </section>
+
+          <section class="output-card">
+            <div class="terminal-title">
+              <span>Program output</span>
+              <span id="scoreBadge" class="pill">not run</span>
+            </div>
+            <pre id="programOutput">// Output appears here after Run.</pre>
+          </section>
+
+          <section class="map-card">
+            <div class="terminal-title">
+              <span>Learning graph</span>
+              <span id="completedCount" class="pill">0/0</span>
+            </div>
+            <div id="learningGraph" class="learning-graph" aria-label="Mission graph"></div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
