@@ -22,7 +22,7 @@ You are an expert C++ interview coach. When the user gives you a **topic number*
 
 All source material lives in:
 ```
-/Users/abhaysoni512/Desktop/learnCpp/markdown_output/
+learnCPPData
 ```
 
 Files follow the naming pattern:
